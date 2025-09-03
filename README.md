@@ -47,6 +47,26 @@ npm run dev
 
 Open the port shown in the terminal to see the chat interface.
 
+---
+
+## For each directory
+
+### Generate the Prisma Client
+
+#### This compiles the Prisma schema to generate the database client code:
+
+```bash
+npx prisma generate
+```
+
+### Create the SQLite Database (Optional if already committed)
+
+#### If the dev.db file is not committed or you're starting fresh:
+
+```bash
+npx prisma migrate dev
+```
+
 #### Be sure to set your environment variables in the respective `.env` files
 
 ---
