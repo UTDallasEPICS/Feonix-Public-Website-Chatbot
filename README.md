@@ -5,7 +5,7 @@
 This repository contains two separate Next.js applications:
 
 - **admin-portal**: Admin dashboard for managing company documents
-- **chat-interface**: Chat interface for user questions
+- **chatbot-component**: Chat interface for user questions
 
 ---
 
