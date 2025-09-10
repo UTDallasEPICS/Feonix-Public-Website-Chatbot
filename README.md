@@ -35,21 +35,7 @@ npm run dev
 
 Open the port shown in the terminal to see the admin portal.
 
-## Run the Chat Interface
-
-### In a separate terminal window:
-
-```bash
-cd chat-interface
-npm install
-npm run dev
-```
-
-Open the port shown in the terminal to see the chat interface.
-
----
-
-## For each directory
+## For the admin portal
 
 ### Generate the Prisma Client
 
@@ -66,6 +52,22 @@ npx prisma generate
 ```bash
 npx prisma migrate dev
 ```
+
+---
+
+## Run the Chatbot Component
+
+### In a separate terminal window:
+
+```bash
+cd chatbot-component
+npm install
+npm run dev
+```
+
+Open the port shown in the terminal to see the chat interface.
+
+---
 
 #### Be sure to set your environment variables in the respective `.env` files
 
