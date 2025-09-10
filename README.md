@@ -13,8 +13,10 @@ This repository contains two separate Next.js applications:
 
 ### Prerequisites
 
+- [Git](https://git-scm.com/)
 - [Node.js](https://nodejs.org/en) (v22 or later recommended)
 - npm (comes with Node.js)
+- [Visual Studio Code](https://code.visualstudio.com/) (or IDE of your choice)
 
 ---
 
