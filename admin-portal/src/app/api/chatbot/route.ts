@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 /**
  * Handles the POST request for the chatbot API.
- * This function processes the incoming message and returns a hardcoded reply.
+ * This function processes the incoming message and returns a reply with references.
  * @param {Request} req The incoming request object.
  * @returns {NextResponse} The response containing the chatbot's reply.
  */
@@ -11,42 +11,94 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { message } = body;
 
-    // Validate that a message was provided.
-    if (!message) {
-      return new NextResponse(JSON.stringify({ error: 'No message provided' }), {
-        status: 400,
-        headers: corsHeaders(),
-      });
+    // Validate message
+    if (!message || typeof message !== 'string') {
+      return jsonResponse({ error: 'No valid message provided' }, 400);
     }
 
-    // Determine the bot's reply based on the user's message.
     const lower = message.toLowerCase();
-    let reply = "I don't understand that. Please try another phrase.";
 
-    if (lower.includes('hello') || lower.includes('hi')) {
-      reply = 'Hello there! How can I help you today?';
-    } else if (lower.includes('how are you')) {
-      reply = 'I am doing great, thank you for asking! What about you?';
-    } else if (lower.includes('what is your name')) {
-      reply = "I am a chatbot created by a Gemini model. I don't have a name!";
-    } else if (lower.includes('help')) {
-      reply = 'I can help with simple questions. Try asking "how are you" or "hello".';
-    } else if (lower.includes('joke')) {
-      reply = "Why don't scientists trust atoms? Because they make up everything!";
+    // Example: keyword groups for variation & synonyms
+    const responses = [
+      {
+        keywords: ['hello', 'hi', 'hey', 'greetings', 'yo'],
+        replies: [
+          "Hello there! 👋",
+          "Hey! How’s it going?",
+          "Hi! What’s up?"
+        ],
+        references: ["https://en.wikipedia.org/wiki/Greeting"]
+      },
+      {
+        keywords: ['bye', 'goodbye', 'see you'],
+        replies: [
+          "Goodbye! Have a great day!",
+          "See you later!",
+          "Take care, bye!"
+        ],
+        references: ["https://en.wikipedia.org/wiki/Farewell"]
+      },
+      {
+        keywords: ['thank you', 'thanks', 'thx'],
+        replies: [
+          "You're welcome! 😊",
+          "No problem at all!",
+          "Glad I could help!"
+        ],
+        references: ["https://en.wikipedia.org/wiki/Gratitude"]
+      },
+      {
+        keywords: ['how are you'],
+        replies: [
+          "I’m doing great, thanks for asking! How about you?",
+          "I’m all good! What about you?",
+          "Fantastic! How are you feeling today?"
+        ],
+        references: ["https://www.wikihow.com/Answer-How-Are-You"]
+      },
+      {
+        keywords: ['joke', 'funny'],
+        replies: [
+          "Why don't scientists trust atoms? Because they make up everything!",
+          "Parallel lines have so much in common… it’s a shame they’ll never meet.",
+          "Why was the math book sad? Because it had too many problems."
+        ],
+        references: ["https://pun.me/pages/funny-jokes.php"]
+      },
+      {
+        keywords: ['help', 'what can you do'],
+        replies: [
+          "I can greet you, tell jokes, answer simple questions, and chat a little.",
+          "Try saying 'hello', 'joke', 'bye', or 'thank you'!",
+          "I’m here for simple chat. Ask me something!"
+        ],
+        references: ["https://developer.mozilla.org/", "https://nextjs.org/docs"]
+      }
+    ];
+
+    // Default reply
+    let reply = "I don't understand that. Please try another phrase.";
+    let references = [
+      "https://developer.mozilla.org/",
+      "https://nextjs.org/docs",
+      "https://ai.google.dev/"
+    ];
+
+    // Match intent
+    for (const { keywords, replies, references: ref } of responses) {
+      if (keywords.some(k => lower.includes(k))) {
+        // Pick a random reply from replies array
+        reply = replies[Math.floor(Math.random() * replies.length)];
+        references = ref;
+        break;
+      }
     }
 
-    // Return the determined reply in a JSON response.
-    return new NextResponse(JSON.stringify({ reply }), {
-      status: 200,
-      headers: corsHeaders(),
-    });
+    return jsonResponse({ reply, references });
 
   } catch (error) {
     console.error('API Error:', error);
-    return new NextResponse(JSON.stringify({ error: 'Something went wrong on the server.' }), {
-      status: 500,
-      headers: corsHeaders(),
-    });
+    return jsonResponse({ error: 'Something went wrong on the server.' }, 500);
   }
 }
 
@@ -61,7 +113,17 @@ export async function OPTIONS() {
 }
 
 /**
- * Utility function for setting CORS headers.
+ * Utility: JSON response with CORS headers
+ */
+function jsonResponse(data: unknown, status = 200) {
+  return new NextResponse(JSON.stringify(data), {
+    status,
+    headers: corsHeaders(),
+  });
+}
+
+/**
+ * Utility: CORS headers
  * Adjust "Access-Control-Allow-Origin" for production security.
  */
 function corsHeaders() {

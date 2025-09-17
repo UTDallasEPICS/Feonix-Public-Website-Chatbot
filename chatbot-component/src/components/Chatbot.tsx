@@ -1,127 +1,189 @@
 "use client";
+import React, { useState, useRef, useEffect } from "react";
 
-import React, { useState, useEffect, useRef } from 'react';
-
-// Main App component that contains all the chatbot logic and UI.
-// This component is the front-end and is designed to run within a Next.js
-// application alongside the API route.
-export default function App() {
-  const [message, setMessage] = useState('');
-  const [chatLog, setChatLog] = useState([]);
+export default function Chatbot() {
+  const [message, setMessage] = useState("");
+  const [chatLog, setChatLog] = useState<
+    { sender: string; text: string; type: string; references?: string[] }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
-  const chatEndRef = useRef(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  /**
-   * Handles sending a message and getting a reply from the API.
-   * It sends a POST request to the /api/chatbot endpoint with the user's message.
-   */
+  // Resizable + position state
+  const [size, setSize] = useState({ width: 300, height: 400 });
+  const isResizing = useRef(false);
+
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = size.width;
+    const startHeight = size.height;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizing.current) return;
+
+      const dx = startX - moveEvent.clientX;
+      const dy = startY - moveEvent.clientY;
+
+      const newWidth = Math.max(300, startWidth + dx);
+      const newHeight = Math.max(400, startHeight + dy);
+
+      setSize({ width: newWidth, height: newHeight });
+    };
+
+    const onMouseUp = () => {
+      isResizing.current = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatLog]);
+
   const sendMessage = async () => {
-    // Prevent sending empty messages or multiple messages while loading.
     if (!message.trim() || isLoading) return;
 
-    // Add user message to the chat log and clear the input field.
     const userMessage = message.trim();
-    setChatLog((prev) => [...prev, { sender: 'You', text: userMessage, type: 'user' }]);
-    setMessage('');
+    setChatLog((prev) => [
+      ...prev,
+      { sender: "You", text: userMessage, type: "user" },
+    ]);
+    setMessage("");
     setIsLoading(true);
 
     try {
-      // Corrected fetch URL to use the absolute path.
-      // This is necessary because the frontend is on a different origin
-      // (e.g., a different port) than the backend server.
-      const res = await fetch('http://localhost:3000/api/chatbot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:3000/api/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
       });
-      
+
       const data = await res.json();
-      
-      // Add the bot's reply to the chat log.
-      setChatLog((prev) => [...prev, { sender: 'Bot', text: data.reply, type: 'bot' }]);
+
+      setChatLog((prev) => [
+        ...prev,
+        {
+          sender: "Bot",
+          text: data.reply,
+          type: "bot",
+          references: data.references || [],
+        },
+      ]);
     } catch (err) {
-      console.error('Error fetching bot reply:', err);
-      setChatLog((prev) => [...prev, { sender: 'Bot', text: 'Error replying! Please try again.', type: 'bot' }]);
+      console.error("Error fetching bot reply:", err);
+      setChatLog((prev) => [
+        ...prev,
+        { sender: "Bot", text: "Error replying! Please try again.", type: "bot" },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Scrolls the chat log to the bottom whenever a new message is added.
-   * This provides a smooth, real-time feel to the chat window.
-   */
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatLog]);
-
   return (
-    <div className="bg-gray-100 flex items-center justify-center min-h-screen p-4 font-sans">
-      <div className="w-full max-w-xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col h-[85vh]">
-        
-        {/* Chatbot Header */}
-        <div className="bg-emerald-600 text-white p-6 shadow-md rounded-t-3xl">
-          <h1 className="text-3xl font-bold text-center">Simple Chatbot</h1>
-          <p className="text-sm text-center mt-2 opacity-90">I'm here to help you. Ask me something!</p>
-        </div>
+    <div
+      style={{
+        width: size.width,
+        height: size.height,
+      }}
+      className="fixed bottom-4 right-4 bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col border border-gray-200"
+    >
+      {/* Header */}
+      <div className="bg-red-600 text-white p-3 shadow-md rounded-t-3xl">
+        <h1 className="text-lg font-bold text-center">Chatbot</h1>
+      </div>
 
-        {/* Chat Log Display Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {chatLog.map((chat, idx) => (
+      {/* Chat Log */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {chatLog.map((chat, idx) => (
+          <div
+            key={idx}
+            className={`flex ${
+              chat.type === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
             <div
-              key={idx}
-              className={`flex ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`max-w-[75%] rounded-2xl p-2 shadow-md text-sm ${
+                chat.type === "user"
+                  ? "bg-orange-500 text-white rounded-br-none"
+                  : "bg-gray-200 text-gray-800 rounded-bl-none"
+              }`}
             >
-              <div
-                className={`max-w-[75%] rounded-2xl p-3 shadow-md text-sm ${
-                  chat.type === 'user'
-                    ? 'bg-blue-500 text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-800 rounded-bl-none'
-                }`}
-              >
-                <div className="font-semibold">{chat.sender}</div>
-                <div>{chat.text}</div>
-              </div>
-            </div>
-          ))}
-          {/* Loading indicator while waiting for the bot's reply */}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="max-w-[75%] rounded-2xl p-3 shadow-md bg-gray-200 text-gray-800 rounded-bl-none text-sm">
-                <div className="font-semibold">Bot</div>
-                <div>...</div>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
+              <div className="font-semibold">{chat.sender}</div>
+              <div>{chat.text}</div>
 
-        {/* Message Input and Send Button */}
-        <div className="p-4 bg-gray-50 border-t border-gray-200">
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  sendMessage();
-                }
-              }}
-              placeholder="Type your message here..."
-              disabled={isLoading}
-            />
-            <button
-              onClick={sendMessage}
-              className="bg-emerald-600 text-white rounded-xl p-3 shadow-md hover:bg-emerald-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={isLoading}
-            >
-              Send
-            </button>
+              {chat.type === "bot" && chat.references && chat.references?.length > 0 && (
+                <div className="mt-1 text-xs text-gray-600">
+                  <div className="font-semibold">References:</div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {chat.references!.map((ref, i) => (
+                      <li key={i}>
+                        <a
+                          href={ref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-red-600 underline"
+                        >
+                          {ref}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
+        ))}
+
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="max-w-[75%] rounded-2xl p-2 shadow-md bg-gray-200 text-gray-800 rounded-bl-none text-sm">
+              <div className="font-semibold">Bot</div>
+              <div>...</div>
+            </div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="p-3 bg-gray-50 border-t border-gray-200">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            className="flex-1 p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
+            placeholder="Type your message..."
+            disabled={isLoading}
+          />
+          <button
+            onClick={sendMessage}
+            className="bg-red-600 text-white rounded-xl px-3 py-2 shadow-md hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={isLoading}
+          >
+            Send
+          </button>
         </div>
       </div>
+
+      {/* Resize Handle (Top-Left) */}
+      <div
+        onMouseDown={startResize}
+        className="absolute top-2 left-2 w-4 h-4 cursor-nw-resize bg-gray-300 rounded"
+      />
     </div>
   );
 }
