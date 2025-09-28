@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState } from "react";
 
 interface UploadedFile {
@@ -24,13 +25,24 @@ export default function UploadPage() {
         const formData = new FormData();
         files.forEach(file => formData.append("files", file));
 
-        const res = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-        });
+        try {
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
 
-        const data = await res.json();
-        setResult({ uploaded: data.uploaded || [], failed: data.failed || [] });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                setResult({ uploaded: [], failed: [{ name: "Server", error: errorData.error || "Unknown error" }] });
+                return;
+            }
+
+            const data = await res.json();
+            setResult({ uploaded: data.uploaded || [], failed: data.failed || [] });
+        } catch (err) {
+            console.error("Network error:", err);
+            setResult({ uploaded: [], failed: [{ name: "Network", error: "Could not connect to server" }] });
+        }
     };
 
     return (
