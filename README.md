@@ -5,7 +5,7 @@
 This repository contains two separate Next.js applications:
 
 - **admin-portal**: Admin dashboard for managing company documents
-- **chat-interface**: Chat interface for user questions
+- **chatbot-component**: Chat interface for user questions
 
 ---
 
@@ -13,8 +13,10 @@ This repository contains two separate Next.js applications:
 
 ### Prerequisites
 
+- [Git](https://git-scm.com/)
 - [Node.js](https://nodejs.org/en) (v22 or later recommended)
 - npm (comes with Node.js)
+- [Visual Studio Code](https://code.visualstudio.com/) (or IDE of your choice)
 
 ---
 
@@ -35,21 +37,7 @@ npm run dev
 
 Open the port shown in the terminal to see the admin portal.
 
-## Run the Chat Interface
-
-### In a separate terminal window:
-
-```bash
-cd chat-interface
-npm install
-npm run dev
-```
-
-Open the port shown in the terminal to see the chat interface.
-
----
-
-## For each directory
+## For the admin portal
 
 ### Generate the Prisma Client
 
@@ -66,6 +54,22 @@ npx prisma generate
 ```bash
 npx prisma migrate dev
 ```
+
+---
+
+## Run the Chatbot Component
+
+### In a separate terminal window:
+
+```bash
+cd chatbot-component
+npm install
+npm run dev
+```
+
+Open the port shown in the terminal to see the chat interface.
+
+---
 
 #### Be sure to set your environment variables in the respective `.env` files
 
