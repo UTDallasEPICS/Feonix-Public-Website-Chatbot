@@ -12,8 +12,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { title, content } = body;
 
+  // Map to current Document schema fields for testing
   const created = await prisma.document.create({
-    data: { title, content },
+    data: {
+      fileName: title || `doc-${Date.now()}`,
+      fileType: typeof content === "string" ? "text/plain" : "application/octet-stream",
+      fileSize: 0,
+    },
   });
 
   return NextResponse.json(created);

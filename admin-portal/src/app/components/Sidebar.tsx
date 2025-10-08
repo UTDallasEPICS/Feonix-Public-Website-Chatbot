@@ -4,7 +4,7 @@ import { FaFileAlt, FaPlusSquare, FaSearch } from 'react-icons/fa';
 
 export default function Sidebar() {
     return (
-        <div className="bg-black text-accent h-screen w-64 flex flex-col justify-between py-6">
+        <div className="bg-sidebar text-accent h-screen w-64 flex flex-col justify-between py-6">
             <div>
                 <h1 className="text-white text-2xl font-bold px-6 mb-8 border-b border-accent pb-2">
                     Admin Dashboard

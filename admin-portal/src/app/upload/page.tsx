@@ -10,9 +10,14 @@ interface UploadedFile {
     savedTo?: string;
 }
 
+interface FailedItem {
+    name: string;
+    error: string;
+}
+
 export default function UploadPage() {
     const [files, setFiles] = useState<File[]>([]);
-    const [result, setResult] = useState<{ uploaded: UploadedFile[]; failed: any[] } | null>(null);
+    const [result, setResult] = useState<{ uploaded: UploadedFile[]; failed: FailedItem[] } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {

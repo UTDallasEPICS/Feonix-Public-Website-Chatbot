@@ -27,8 +27,11 @@ export async function POST(request: Request) {
             await mkdir(uploadDir, { recursive: true });
         }
 
-        const savedFiles: any[] = [];
-        const errors: any[] = [];
+    type SavedFile = { name: string; size: number; type: string; savedTo: string };
+    type ErrorItem = { name: string; error: string };
+
+    const savedFiles: SavedFile[] = [];
+    const errors: ErrorItem[] = [];
 
         for (const file of files) {
             // ✅ Validate file type
@@ -47,15 +50,38 @@ export async function POST(request: Request) {
             try {
                 await prisma.document.create({
                     data: {
-                        title: file.name,
+                        fileName: file.name,
                         fileType: file.type,
                         fileSize: file.size,
                     },
                 });
-            } catch (dbError) {
-                console.error("Database insert error:", dbError);
-                errors.push({ name: file.name, error: "Failed to save metadata" });
-                continue;
+            } catch (dbError: unknown) {
+                // If the DB doesn't have `fileName` (legacy schema used `title`), try fallback
+                const isMissingColumn =
+                    (dbError as any)?.code === "P2022" ||
+                    String((dbError as any)?.message || "").toLowerCase().includes("filename");
+
+                if (isMissingColumn) {
+                    try {
+                        // fallback to legacy `title` column if present
+                        await prisma.document.create({
+                            data: {
+                                // @ts-expect-error legacy column
+                                title: file.name,
+                                fileType: file.type,
+                                fileSize: file.size,
+                            },
+                        });
+                    } catch (legacyErr) {
+                        console.error("Database insert error (legacy attempt):", legacyErr);
+                        errors.push({ name: file.name, error: `Failed to save metadata: ${(legacyErr as any)?.message || legacyErr}` });
+                        continue;
+                    }
+                } else {
+                    console.error("Database insert error:", dbError);
+                    errors.push({ name: file.name, error: `Failed to save metadata: ${(dbError as any)?.message || dbError}` });
+                    continue;
+                }
             }
 
             savedFiles.push({

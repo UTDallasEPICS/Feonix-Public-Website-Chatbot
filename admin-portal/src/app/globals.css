@@ -12,12 +12,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Keep the same light background even when the OS prefers dark mode.
+   This prevents the site background from becoming black. If you want a
+   different dark-mode color later, replace --background here. */
+
 
 body {
   background: var(--background);
