@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
+import { prisma } from "../../../../lib/prisma"
 
 const ALLOWED_TYPES = ["application/pdf", "text/plain",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+
+
 
 export async function POST(request: Request) {
     try {
@@ -39,6 +42,21 @@ export async function POST(request: Request) {
 
             const filePath = path.join(uploadDir, file.name);
             await writeFile(filePath, buffer);
+
+            // Save metadata to database
+            try {
+                await prisma.document.create({
+                    data: {
+                        title: file.name,
+                        fileType: file.type,
+                        fileSize: file.size,
+                    },
+                });
+            } catch (dbError) {
+                console.error("Database insert error:", dbError);
+                errors.push({ name: file.name, error: "Failed to save metadata" });
+                continue;
+            }
 
             savedFiles.push({
                 name: file.name,
