@@ -71,9 +71,10 @@ export default function FileTable() {
     }
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md w-full">
-            <h2 className="text-2xl font-semibold text-purple-700 mb-4">File Manager</h2>
-            {loading ? (
+        <div className="flex justify-center">
+            <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl">
+                <h2 className="text-3xl font-semibold text-[#b63aa6] mb-4">File Manager</h2>
+                {loading ? (
                 <div>Loading...</div>
             ) : (
                 <table className="w-full border-collapse">
@@ -94,10 +95,10 @@ export default function FileTable() {
                                 <td className="p-3">{prettyType(file.fileType)}</td>
                                 <td className="p-3">{file.createdAt ? new Date(file.createdAt).toLocaleString() : "-"}</td>
                                 <td className="p-3 space-x-2">
-                                    <button onClick={() => handleView(file.id)} className="bg-viewBtn text-white px-3 py-1 rounded text-sm hover:opacity-90">
+                                    <button onClick={() => handleView(file.id)} className="bg-orange-400 text-white px-3 py-1 rounded text-sm hover:opacity-90">
                                         👁 View
                                     </button>
-                                    <button onClick={() => handleDelete(file.id)} className="bg-removeBtn text-white px-3 py-1 rounded text-sm hover:opacity-90">
+                                    <button onClick={() => handleDelete(file.id)} className="bg-pink-600 text-white px-3 py-1 rounded text-sm hover:opacity-90">
                                         🗑 Remove
                                     </button>
                                 </td>
@@ -112,7 +113,8 @@ export default function FileTable() {
                         )}
                     </tbody>
                 </table>
-            )}
+                )}
+            </div>
         </div>
     );
 }
