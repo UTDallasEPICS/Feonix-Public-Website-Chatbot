@@ -22,13 +22,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Create uploads folder if it doesn't exist
     const uploadDir = path.join(process.cwd(), "uploads");
-    if (!existsSync(uploadDir)) await mkdir(uploadDir, { recursive: true });
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
 
-    const savedFiles: any[] = [];
-    const errors: any[] = [];
+    type SavedFile = { name: string; size: number; type: string; savedTo: string };
+    type ErrorItem = { name: string; error: string };
+
+    const savedFiles: SavedFile[] = [];
+    const errors: ErrorItem[] = [];
 
     for (const file of files) {
+      // ✅ Validate file type
       if (!ALLOWED_TYPES.includes(file.type)) {
         errors.push({ name: file.name, error: "Unsupported file type" });
         continue;
@@ -37,34 +44,54 @@ export async function POST(request: Request) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const safeOriginalName = file.name.replace(/\s+/g, "_");
-      const storedName = `${Date.now()}_${safeOriginalName}`;
-      const filePath = path.join(uploadDir, storedName);
+      const filePath = path.join(uploadDir, file.name);
       await writeFile(filePath, buffer);
 
+      // Save metadata to database
       try {
-        await prisma.file.create({
+        await prisma.document.create({
           data: {
-            originalName: file.name,
-            storedName,
-            fileSize: file.size,
+            fileName: file.name,
             fileType: file.type,
-            savedTo: `/uploads/${storedName}`,
+            fileSize: file.size,
           },
         });
+      } catch (dbError: unknown) {
+        // If the DB doesn't have `fileName` (legacy schema used `title`), try fallback
+        const isMissingColumn =
+          (dbError as any)?.code === "P2022" ||
+          String((dbError as any)?.message || "").toLowerCase().includes("filename");
 
-        savedFiles.push({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          savedTo: `/uploads/${storedName}`,
-        });
-      } catch (dbError) {
-        console.error("Database insert error:", dbError);
-        errors.push({ name: file.name, error: "Failed to save metadata" });
+        if (isMissingColumn) {
+          try {
+            // fallback to legacy `title` column if present
+            await prisma.document.create({
+              data: {
+                // @ts-expect-error legacy column
+                title: file.name,
+                fileType: file.type,
+                fileSize: file.size,
+              },
+            });
+          } catch (legacyErr) {
+            console.error("Database insert error (legacy attempt):", legacyErr);
+            errors.push({ name: file.name, error: `Failed to save metadata: ${(legacyErr as any)?.message || legacyErr}` });
+            continue;
+          }
+        } else {
+          console.error("Database insert error:", dbError);
+          errors.push({ name: file.name, error: `Failed to save metadata: ${(dbError as any)?.message || dbError}` });
+          continue;
+        }
       }
-    }
 
+      savedFiles.push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        savedTo: `/uploads/${file.name}`,
+      });
+    }
     return NextResponse.json({
       success: errors.length === 0,
       uploaded: savedFiles,
