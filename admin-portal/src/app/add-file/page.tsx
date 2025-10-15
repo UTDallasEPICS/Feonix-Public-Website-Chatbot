@@ -1,5 +1,5 @@
 import UploadForm from "../components/UploadForm";
 
-export default function UploadPage() {
+export default function AddFilePage() {
     return <UploadForm />;
 }

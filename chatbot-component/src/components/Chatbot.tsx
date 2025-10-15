@@ -9,40 +9,8 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Resizable + position state
-  const [size, setSize] = useState({ width: 300, height: 400 });
-  const isResizing = useRef(false);
 
-  const startResize = (e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizing.current = true;
 
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = size.width;
-    const startHeight = size.height;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isResizing.current) return;
-
-      const dx = startX - moveEvent.clientX;
-      const dy = startY - moveEvent.clientY;
-
-      const newWidth = Math.max(300, startWidth + dx);
-      const newHeight = Math.max(400, startHeight + dy);
-
-      setSize({ width: newWidth, height: newHeight });
-    };
-
-    const onMouseUp = () => {
-      isResizing.current = false;
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  };
 
   // Auto-scroll chat
   useEffect(() => {
@@ -72,7 +40,7 @@ export default function Chatbot() {
       setChatLog((prev) => [
         ...prev,
         {
-          sender: "Bot",
+          sender: "Mr. Feonix",
           text: data.reply,
           type: "bot",
           references: data.references || [],
@@ -82,7 +50,7 @@ export default function Chatbot() {
       console.error("Error fetching bot reply:", err);
       setChatLog((prev) => [
         ...prev,
-        { sender: "Bot", text: "Error replying! Please try again.", type: "bot" },
+        { sender: "Mr. Feonix", text: "Error replying! Please try again.", type: "bot" },
       ]);
     } finally {
       setIsLoading(false);
@@ -91,15 +59,12 @@ export default function Chatbot() {
 
   return (
     <div
-      style={{
-        width: size.width,
-        height: size.height,
-      }}
-      className="fixed bottom-4 right-4 bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col border border-gray-200"
+
+className="fixed top-24 bottom-24 left-256 right-4 bg-orange-50 rounded-3xl shadow-xl overflow-hidden flex flex-col border border-orange-800"
     >
       {/* Header */}
-      <div className="bg-red-600 text-white p-3 shadow-md rounded-t-3xl">
-        <h1 className="text-lg font-bold text-center">Chatbot</h1>
+      <div className="bg-red-600 text-white p-5 shadow-md rounded-t-3xl">
+        <h1 className="text-2xl font-bold text-left">Mr. Feonix</h1>
       </div>
 
       {/* Chat Log */}
@@ -147,7 +112,7 @@ export default function Chatbot() {
         {isLoading && (
           <div className="flex justify-start">
             <div className="max-w-[75%] rounded-2xl p-2 shadow-md bg-gray-200 text-gray-800 rounded-bl-none text-sm">
-              <div className="font-semibold">Bot</div>
+              <div className="font-semibold">Mr. Feonix</div>
               <div>...</div>
             </div>
           </div>
@@ -156,17 +121,17 @@ export default function Chatbot() {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-gray-50 border-t border-gray-200">
+      <div className="p-5 bg-orange-50 border-t border-gray-200">
         <div className="flex space-x-2">
           <input
             type="text"
-            className="flex-1 p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+            className="flex-1 p-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") sendMessage();
             }}
-            placeholder="Type your message..."
+            placeholder="What do you need help with?"
             disabled={isLoading}
           />
           <button
@@ -179,11 +144,9 @@ export default function Chatbot() {
         </div>
       </div>
 
-      {/* Resize Handle (Top-Left) */}
-      <div
-        onMouseDown={startResize}
-        className="absolute top-2 left-2 w-4 h-4 cursor-nw-resize bg-gray-300 rounded"
-      />
+
+
+
     </div>
   );
 }
