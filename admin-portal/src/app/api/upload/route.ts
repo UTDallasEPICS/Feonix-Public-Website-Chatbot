@@ -27,11 +27,11 @@ export async function POST(request: Request) {
             await mkdir(uploadDir, { recursive: true });
         }
 
-    type SavedFile = { name: string; size: number; type: string; savedTo: string };
-    type ErrorItem = { name: string; error: string };
+        type SavedFile = { name: string; size: number; type: string; savedTo: string };
+        type ErrorItem = { name: string; error: string };
 
-    const savedFiles: SavedFile[] = [];
-    const errors: ErrorItem[] = [];
+        const savedFiles: SavedFile[] = [];
+        const errors: ErrorItem[] = [];
 
         for (const file of files) {
             // ✅ Validate file type
@@ -63,14 +63,7 @@ export async function POST(request: Request) {
 
                 if (isMissingColumn) {
                     try {
-                        // fallback to legacy `title` column if present
-                        await prisma.document.create({
-                            data: {
-                                title: file.name,
-                                fileType: file.type,
-                                fileSize: file.size,
-                            },
-                        });
+
                     } catch (legacyErr) {
                         console.error("Database insert error (legacy attempt):", legacyErr);
                         errors.push({ name: file.name, error: `Failed to save metadata: ${(legacyErr as any)?.message || legacyErr}` });
