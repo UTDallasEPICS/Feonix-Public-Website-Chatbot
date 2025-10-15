@@ -13,7 +13,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: "Invalid file ID" }, { status: 400 });
     }
 
-    const fileRecord = await prisma.file.findUnique({ where: { id: fileId } });
+    const fileRecord = await prisma.document.findUnique({ where: { id: fileId } });
     if (!fileRecord) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }

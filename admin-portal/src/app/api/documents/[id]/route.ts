@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const id = Number(parts[parts.length - 1]);
     if (Number.isNaN(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
-    const doc = await prisma.document.findUnique({ where: { id } });
+    const doc = await prisma.file.findUnique({ where: { id } });
     if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // determine filename stored on disk - earlier migrations sometimes used `title` or `fileName`
@@ -39,7 +39,7 @@ export async function DELETE(request: Request) {
     const id = Number(parts[parts.length - 1]);
     if (Number.isNaN(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
-    const doc = await prisma.document.findUnique({ where: { id } });
+    const doc = await prisma.file.findUnique({ where: { id } });
     if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const fileName = ((doc as unknown) as { title?: string; fileName?: string }).title ||
@@ -54,7 +54,7 @@ export async function DELETE(request: Request) {
         });
 
         // delete db record
-        await prisma.document.delete({ where: { id } });
+        await prisma.file.delete({ where: { id } });
 
         return NextResponse.json({ success: true });
     } catch (err) {

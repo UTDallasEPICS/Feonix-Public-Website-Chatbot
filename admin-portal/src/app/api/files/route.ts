@@ -3,7 +3,7 @@ import { prisma } from "../../../../lib/prisma"
 
 export async function GET() {
   try {
-    const files = await prisma.file.findMany({
+    const files = await prisma.document.findMany({
       orderBy: { uploadedAt: "desc" },
     });
     return NextResponse.json({ files });
