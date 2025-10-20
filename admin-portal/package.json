@@ -12,10 +12,16 @@
     "@langchain/community": "^0.3.57",
     "@prisma/client": "^6.15.0",
     "formidable": "^3.5.4",
+<<<<<<< HEAD
     "langchain": "^0.3.36",
     "mammoth": "^1.11.0",
     "next": "15.5.2",
     "pdf-parse": "^1.1.1",
+=======
+    "mammoth": "^1.11.0",
+    "next": "15.5.2",
+    "pdf-parse": "^2.3.12",
+>>>>>>> 9dc7742c5b5acac25d34c87c4a21d172d0b5163b
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
