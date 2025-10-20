@@ -4,23 +4,22 @@ import path from "path";
 import { existsSync } from "fs";
 import { prisma } from "../../../../lib/prisma"
 
-const ALLOWED_TYPES = [
-  "application/pdf",
-  "text/plain",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
+const ALLOWED_TYPES = ["application/pdf", "text/plain",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+
+
 
 export async function POST(request: Request) {
-  try {
-    const formData = await request.formData();
-    const files = formData.getAll("files") as File[];
+    try {
+        const formData = await request.formData();
+        const files = formData.getAll("files") as File[];
 
-    if (files.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "No files uploaded" },
-        { status: 400 }
-      );
-    }
+        if (files.length === 0) {
+            return NextResponse.json(
+                { success: false, message: "No files uploaded" },
+                { status: 400 }
+            );
+        }
 
     // Create uploads folder if it doesn't exist
     const uploadDir = path.join(process.cwd(), "uploads");

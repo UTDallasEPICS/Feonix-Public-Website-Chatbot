@@ -8,12 +8,11 @@ datasource db {
 }
 
 
-model File {
-  id     Int      @id @default(autoincrement())
-  originalName     String
-  storedName  String
+model Document {
+  id        Int      @id @default(autoincrement())
+  fileName     String
+  fileType  String
   fileSize  Int
-  fileType  String?
-  savedTo String
-  uploadedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
