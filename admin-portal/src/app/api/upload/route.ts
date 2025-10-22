@@ -21,26 +21,6 @@ export async function POST(request: Request) {
             );
         }
 
-<<<<<<< HEAD
-    // Create uploads folder if it doesn't exist
-    const uploadDir = path.join(process.cwd(), "uploads");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    type SavedFile = { name: string; size: number; type: string; savedTo: string };
-    type ErrorItem = { name: string; error: string };
-
-    const savedFiles: SavedFile[] = [];
-    const errors: ErrorItem[] = [];
-
-    for (const file of files) {
-      // ✅ Validate file type
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        errors.push({ name: file.name, error: "Unsupported file type" });
-        continue;
-      }
-=======
         // Create uploads folder if it doesn't exist
         const uploadDir = path.join(process.cwd(), "uploads");
         if (!existsSync(uploadDir)) {
@@ -52,7 +32,6 @@ export async function POST(request: Request) {
 
         const savedFiles: SavedFile[] = [];
         const errors: ErrorItem[] = [];
->>>>>>> 9dc7742c5b5acac25d34c87c4a21d172d0b5163b
 
         for (const file of files) {
             // ✅ Validate file type
@@ -61,19 +40,6 @@ export async function POST(request: Request) {
                 continue;
             }
 
-<<<<<<< HEAD
-      const filePath = path.join(uploadDir, file.name);
-      await writeFile(filePath, buffer);
-
-      // Save metadata to database
-      try {
-        await prisma.document.create({
-          data: {
-            fileName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
-          },
-=======
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
@@ -122,64 +88,12 @@ export async function POST(request: Request) {
             success: errors.length === 0,
             uploaded: savedFiles,
             failed: errors,
->>>>>>> 9dc7742c5b5acac25d34c87c4a21d172d0b5163b
         });
-      } catch (dbError: unknown) {
-        // If the DB doesn't have `fileName` (legacy schema used `title`), try fallback
-        const isMissingColumn =
-          (dbError as any)?.code === "P2022" ||
-          String((dbError as any)?.message || "").toLowerCase().includes("filename");
-
-<<<<<<< HEAD
-        if (isMissingColumn) {
-          try {
-            // fallback to legacy `title` column if present
-            await prisma.document.create({
-              data: {
-                // @ts-expect-error legacy column
-                title: file.name,
-                fileType: file.type,
-                fileSize: file.size,
-              },
-            });
-          } catch (legacyErr) {
-            console.error("Database insert error (legacy attempt):", legacyErr);
-            errors.push({ name: file.name, error: `Failed to save metadata: ${(legacyErr as any)?.message || legacyErr}` });
-            continue;
-          }
-        } else {
-          console.error("Database insert error:", dbError);
-          errors.push({ name: file.name, error: `Failed to save metadata: ${(dbError as any)?.message || dbError}` });
-          continue;
-        }
-      }
-
-      savedFiles.push({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        savedTo: `/uploads/${file.name}`,
-      });
-    }
-    return NextResponse.json({
-      success: errors.length === 0,
-      uploaded: savedFiles,
-      failed: errors,
-    });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json(
-      { success: false, error: "Server error while uploading files" },
-      { status: 500 }
-    );
-  }
-=======
-    } catch (error) {
+      }  catch (error) {
         console.error("Upload error:", error);
         return NextResponse.json(
             { success: false, error: "Server error while uploading files" },
             { status: 500 }
         );
     }
->>>>>>> 9dc7742c5b5acac25d34c87c4a21d172d0b5163b
 }
