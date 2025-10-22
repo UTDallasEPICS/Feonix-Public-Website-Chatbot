@@ -1,0 +1,9 @@
+-- CreateTable
+CREATE TABLE "Document" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "fileName" TEXT NOT NULL,
+    "fileType" TEXT NOT NULL,
+    "fileSize" INTEGER NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);

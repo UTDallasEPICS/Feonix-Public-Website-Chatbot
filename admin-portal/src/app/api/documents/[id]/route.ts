@@ -21,12 +21,12 @@ export async function GET(request: Request) {
     try {
         const data = await readFile(filePath);
         // Node Buffer -> ArrayBuffer for NextResponse
-    const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-    const headers = new Headers();
-    headers.set("Content-Type", ((doc as unknown) as { fileType?: string }).fileType || "application/octet-stream");
-    headers.set("Content-Disposition", `inline; filename="${fileName}"`);
-    const uint8 = new Uint8Array(arrayBuffer as ArrayBuffer);
-    return new Response(uint8, { headers, status: 200 });
+        const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+        const headers = new Headers();
+        headers.set("Content-Type", ((doc as unknown) as { fileType?: string }).fileType || "application/octet-stream");
+        headers.set("Content-Disposition", `inline; filename="${fileName}"`);
+        const uint8 = new Uint8Array(arrayBuffer as ArrayBuffer);
+        return new Response(uint8, { headers, status: 200 });
     } catch (err) {
         console.error("File read error", err);
         return NextResponse.json({ error: "File not found on disk" }, { status: 404 });
