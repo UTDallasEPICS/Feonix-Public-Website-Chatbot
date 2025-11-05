@@ -1,8 +1,12 @@
 "use client";
 import Link from "next/link";
 import { FaFileAlt, FaPlusSquare, FaSearch } from "react-icons/fa";
+import { useUser } from "../context/UserContext";
+import { LogOutButton } from "../auth/nextjs/components/LogOutButton";
 
 export default function Sidebar() {
+  const { user } = useUser();
+
   return (
     <div className="bg-[#2f3338] text-orange-400 h-screen w-64 flex flex-col justify-between py-6">
       <div>
@@ -36,6 +40,19 @@ export default function Sidebar() {
             </Link>
           </li>
         </ul>
+      </div>
+
+      <div>
+        {user ? (
+          <>
+            <p>Hello, {user.name}!</p>
+            <LogOutButton />
+          </>
+        ) : (
+          <p>
+            You are not logged in. Please <a href="/login">log in</a>.
+          </p>
+        )}
       </div>
 
       <div className="px-6">
