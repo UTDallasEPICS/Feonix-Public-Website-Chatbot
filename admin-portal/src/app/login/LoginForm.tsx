@@ -4,7 +4,7 @@ import { oAuthSignIn } from "../auth/nextjs/actions";
 
 export default function LoginPage({ oauthError }: { oauthError: string }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-6">
+    <div className="flex min-h-screen items-center justify-center bg-[#2f3338] text-orange-400 px-6">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Image
@@ -12,12 +12,12 @@ export default function LoginPage({ oauthError }: { oauthError: string }) {
             alt="App Logo"
             width={120}
             height={60}
-            className="mx-auto mb-4"
+            className="mx-auto mb-4 opacity-80"
           />
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h2 className="text-3xl font-extrabold tracking-tight text-orange-300">
             Welcome Back
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-orange-200">
             Sign in to continue to the admin dashboard
           </p>
         </div>
@@ -25,7 +25,7 @@ export default function LoginPage({ oauthError }: { oauthError: string }) {
         <div className="mt-10">
           <button
             onClick={async () => await oAuthSignIn("google")}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-md font-medium text-gray-700 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#a84aa8] bg-[#2f3338] px-4 py-3 text-md font-medium text-orange-400 shadow-sm transition hover:bg-[#3c4146] dark:hover:bg-[#3c4146] dark:border-[#a84aa8]"
           >
             <FcGoogle size={30} />
             Continue with Google
@@ -53,19 +53,13 @@ export default function LoginPage({ oauthError }: { oauthError: string }) {
         )}
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
+        <p className="text-center text-xs text-orange-200 mt-6">
           By signing in, you agree to our{" "}
-          <a
-            href="/terms"
-            className="underline hover:text-gray-700 dark:hover:text-gray-300"
-          >
+          <a href="/terms" className="underline hover:text-orange-100">
             Terms of Service
           </a>{" "}
           and{" "}
-          <a
-            href="/privacy"
-            className="underline hover:text-gray-700 dark:hover:text-gray-300"
-          >
+          <a href="/privacy" className="underline hover:text-orange-100">
             Privacy Policy
           </a>
           .
