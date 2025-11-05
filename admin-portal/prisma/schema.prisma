@@ -16,3 +16,37 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum OAuthProvider {
+  github
+  google
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  createdAt     DateTime       @default(now())
+  sessions      Session[]
+  oauthAccounts OAuthAccount[]
+}
+
+model OAuthAccount {
+  id                Int           @id @default(autoincrement())
+  provider          OAuthProvider
+  providerAccountId String        // Unique ID provided by the OAuth provider
+  userId            Int
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime      @default(now())
+  
+  // Ensure that each user can only link a unique provider account ID
+  @@unique([provider, providerAccountId])
+}
