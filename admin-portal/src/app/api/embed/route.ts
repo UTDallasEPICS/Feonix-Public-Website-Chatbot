@@ -5,8 +5,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import fs from "fs";
 import path from "path";
 
-const client = new ChromaClient({ path: "http://localhost:8000" });
-
+const client = new ChromaClient();
 
 const collectionName = "text_files_collection";
 
