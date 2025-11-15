@@ -1,20 +1,9 @@
 import { NextResponse } from "next/server";
-import { ChromaClient } from "chromadb";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import fs from "fs";
 import path from "path";
-
-const client = new ChromaClient();
-
-const collectionName = "text_files_collection";
-
-async function getOrCreateCollection(embeddings: any) {
-  return client.getOrCreateCollection({
-    name: "text_files_collection",
-    embeddingFunction: embeddings, // ✅ fixes the error
-  });
-}
+import { getOrCreateCollection } from "../../../lib/chroma";
 
 
 // --------------------------
@@ -36,13 +25,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-// Save file in a local "uploads" folder in your project directory
-const uploadDir = path.join(process.cwd(), "uploads");
-fs.mkdirSync(uploadDir, { recursive: true }); // ensure folder exists
+    // Save file in a local "uploads" folder in your project directory
+    const uploadDir = path.join(process.cwd(), "uploads");
+    fs.mkdirSync(uploadDir, { recursive: true }); // ensure folder exists
 
-const filePath = path.join(uploadDir, file.name);
-const buffer = Buffer.from(await file.arrayBuffer());
-fs.writeFileSync(filePath, buffer);
+    const filePath = path.join(uploadDir, file.name);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    fs.writeFileSync(filePath, buffer);
 
 
     // Read content
@@ -57,15 +46,15 @@ fs.writeFileSync(filePath, buffer);
 
     // Embedding model
     const embeddings = new HuggingFaceInferenceEmbeddings({
-  apiKey: process.env.HUGGINGFACE_API_KEY,
-  model: "BAAI/bge-m3",
-});
+      apiKey: process.env.HUGGINGFACE_API_KEY,
+      model: process.env.EMBED_MODEL || "BAAI/bge-m3",
+    });
 
-// Generate embeddings for chunks
-const vectors = await embeddings.embedDocuments(chunks);
+    // Generate embeddings for chunks
+    const vectors = await embeddings.embedDocuments(chunks);
 
-// Store in Chroma
-const collection = await getOrCreateCollection(embeddings);
+    // Store in Chroma (collection and client are handled by helper)
+    const collection = await getOrCreateCollection(embeddings);
 
     const ids = chunks.map((_, i) => `${file.name}-${i}`);
 
@@ -103,17 +92,15 @@ export async function PUT(request: Request) {
     // 1. Create embedding function (Hugging Face)
     const embeddings = new HuggingFaceInferenceEmbeddings({
       apiKey: process.env.HUGGINGFACE_API_KEY,
-      model: "BAAI/bge-m3",
+      model: process.env.EMBED_MODEL || "BAAI/bge-m3",
     });
 
     // 2. Embed the query string
     const queryEmbedding = await embeddings.embedQuery(query);
 
     // 3. Get Chroma collection with the same embedding function
-    const collection = await client.getOrCreateCollection({
-      name: "text_files_collection",
-      embeddingFunction: embeddings, // ✅ important fix
-    });
+    // ensure collection exists with same embedding function
+    const collection = await getOrCreateCollection(embeddings);
 
     // 4. Search for most similar documents
     const results = await collection.query({

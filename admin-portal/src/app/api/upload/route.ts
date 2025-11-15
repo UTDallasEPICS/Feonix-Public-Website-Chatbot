@@ -11,7 +11,7 @@ import { TextLoader } from "langchain/document_loaders/fs/text";
 
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
-import { ChromaClient } from "chromadb";
+import { getOrCreateCollection } from "../../../lib/chroma";
 
 export const runtime = "nodejs";
 
@@ -22,14 +22,8 @@ const ALLOWED_TYPES = [
 ];
 
 
-const chroma = new ChromaClient({ path: "http://localhost:8000" });
-
-async function getCollection(embeddings: any) {
-  return chroma.getOrCreateCollection({
-    name: "documents_collection",
-    embeddingFunction: embeddings
-  });
-}
+// Use centralized Chroma client and collection helpers
+// (getOrCreateCollection will create the collection with the provided embedding function)
 
 async function loadText(filePath: string, ext: string) {
   let loader;
@@ -66,10 +60,10 @@ export async function POST(request: Request) {
 
     const embeddings = new HuggingFaceInferenceEmbeddings({
       apiKey: process.env.HUGGINGFACE_API_KEY,
-      model: "BAAI/bge-m3",
+      model: process.env.EMBED_MODEL || "BAAI/bge-m3",
     });
 
-    const collection = await getCollection(embeddings);
+    const collection = await getOrCreateCollection(embeddings);
 
     const results: any[] = [];
 
