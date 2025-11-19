@@ -50,3 +50,9 @@ model OAuthAccount {
   // Ensure that each user can only link a unique provider account ID
   @@unique([provider, providerAccountId])
 }
+
+model AllowedUser {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
