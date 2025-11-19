@@ -10,13 +10,13 @@
   },
   "dependencies": {
     "@huggingface/inference": "^4.12.0",
-    "@langchain/community": "^0.3.57",
     "@langchain/core": "^0.3.58",
-    "@langchain/ollama": "^0.2.4",
     "@prisma/client": "^6.15.0",
     "chromadb": "^3.0.17",
     "formidable": "^3.5.4",
     "langchain": "^0.3.36",
+    "lightning": "^10.27.2",
+    "lightningcss": "^1.30.2",
     "mammoth": "^1.11.0",
     "next": "16.0.0",
     "pdf-parse": "^1.1.1",
@@ -36,7 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "postcss": "^8.5.6",
-    "prisma": "^6.15.0",
+    "prisma": "^6.19.0",
     "tailwindcss": "^4.1.14",
     "typescript": "^5"
   }
