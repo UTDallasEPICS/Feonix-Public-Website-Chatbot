@@ -3,6 +3,10 @@ import { FcGoogle } from "react-icons/fc";
 import { oAuthSignIn } from "../auth/nextjs/actions";
 
 export default function LoginPage({ oauthError }: { oauthError: string }) {
+  const handleGoogleSignIn = async () => {
+    await oAuthSignIn("google");
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#2f3338] text-orange-400 px-6">
       <div className="w-full max-w-md space-y-8">
@@ -24,7 +28,7 @@ export default function LoginPage({ oauthError }: { oauthError: string }) {
 
         <div className="mt-10">
           <button
-            onClick={async () => await oAuthSignIn("google")}
+            onClick={handleGoogleSignIn}
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#a84aa8] bg-[#2f3338] px-4 py-3 text-md font-medium text-orange-400 shadow-sm transition hover:bg-[#3c4146] dark:hover:bg-[#3c4146] dark:border-[#a84aa8]"
           >
             <FcGoogle size={30} />
