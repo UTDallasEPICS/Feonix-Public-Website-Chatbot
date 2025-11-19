@@ -1,4 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
+import { RunnableWithMessageHistory } from "@langchain/core/runnables";
+import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
+import { ChatMessageHistory } from "@langchain/community/stores/message/in_memory";
 
 /**
  * Handles the POST request for the chatbot API.
@@ -132,4 +136,67 @@ function corsHeaders() {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
+}
+
+const sessions = new Map<string, ChatMessageHistory>();
+const getHistory = (id: string): ChatMessageHistory => {
+  let h = sessions.get(id);
+  if (!h) {
+    h = new ChatMessageHistory();
+    sessions.set(id, h);
+  }
+  return h;
+};
+
+export async function callLLM(req: Request) {
+  const { input, sessionId, options, system } = await req.json();
+
+  const model = new ChatOllama({
+    baseUrl: "http://localhost:11434",
+    model: "gpt-oss:20b",
+    streaming: true,
+    ...options,
+  });
+
+  // Get or create chat history for this session
+  const history = getHistory(sessionId);
+  
+  // Create and add messages to history
+  const messages = [];
+  if (system) {
+    const systemMessage = new SystemMessage(system);
+    messages.push(systemMessage);
+    await history.addMessage(systemMessage);
+  }
+  
+  const userMessage = new HumanMessage(input);
+  messages.push(userMessage);
+  await history.addMessage(userMessage);
+
+  const withHistory = new RunnableWithMessageHistory({
+    runnable: model,
+    getMessageHistory: async (sid: string) => getHistory(sid),
+    inputMessagesKey: "input",      // the field holding the new user message
+    historyMessagesKey: "history",  // where LangChain will inject past turns
+  });
+
+  // Stream with proper LangChain message objects
+  const stream = await withHistory.stream(
+    messages,                        // Array of LangChain messages
+    { configurable: { sessionId } }  // ties to the right chat thread
+  );
+
+  const enc = new TextEncoder();
+  const rs = new ReadableStream({
+    async start(ctrl) {
+      for await (const chunk of stream) {
+        ctrl.enqueue(enc.encode(JSON.stringify(chunk) + "\n"));
+      }
+      ctrl.close();
+    },
+  });
+
+  return new NextResponse(rs, {
+    headers: { "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+  });
 }
