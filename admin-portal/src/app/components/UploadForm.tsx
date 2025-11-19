@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useUser } from "../context/UserContext";
+
+
+
 
 interface UploadedFile {
     name: string;
@@ -15,6 +19,7 @@ interface FailedItem {
 }
 
 export default function UploadForm() {
+    const { user } = useUser();
     const [files, setFiles] = useState<File[]>([]);
     const [result, setResult] = useState<{ uploaded: UploadedFile[]; failed: FailedItem[] } | null>(null);
 
@@ -27,7 +32,9 @@ export default function UploadForm() {
 
     const handleUpload = async () => {
         const formData = new FormData();
+        
         files.forEach(file => formData.append("files", file));
+formData.append("userId", user?.userId || "");
 
         try {
             const res = await fetch("/api/upload", {

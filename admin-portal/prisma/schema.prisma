@@ -15,6 +15,10 @@ model Document {
   fileSize  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId    Int      
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
 }
 
 enum OAuthProvider {
@@ -37,6 +41,7 @@ model User {
   createdAt     DateTime       @default(now())
   sessions      Session[]
   oauthAccounts OAuthAccount[]
+  documents     Document[]
 }
 
 model OAuthAccount {
