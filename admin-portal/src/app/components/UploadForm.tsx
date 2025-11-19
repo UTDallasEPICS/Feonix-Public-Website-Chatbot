@@ -32,9 +32,9 @@ export default function UploadForm() {
 
     const handleUpload = async () => {
         const formData = new FormData();
-        
+
         files.forEach(file => formData.append("files", file));
-formData.append("userId", user?.userId || "");
+        formData.append("userId", user?.id?.toString() || "");
 
         try {
             const res = await fetch("/api/upload", {
