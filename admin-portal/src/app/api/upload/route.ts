@@ -86,13 +86,15 @@ export async function POST(request: Request) {
       }
 
       // Save metadata → Prisma
-      const docEntry = await prisma.document.create({
-        data: {
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-        },
-      });
+const docEntry = await prisma.document.create({
+  data: {
+    fileName: file.name,
+    fileType: file.type,
+    fileSize: file.size,
+    userId: Number(formData.get("userId")),
+  },
+});
+
 
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
