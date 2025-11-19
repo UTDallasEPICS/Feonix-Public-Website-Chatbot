@@ -1,37 +1,27 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
-import Button from "./components/Button"
+import { Chatbot } from "./components/Chatbot";
+import logoPng from "./assets/catch-a-ride-icon.svg";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const exampleQuestions = [
+    { id: "1", question: "What is Catch a Ride?" },
+    { id: "2", question: "Am I eligible to use Catch a Ride?" },
+    { id: "3", question: "How do I book a ride?" },
+  ];
+
+  const logoElement = (
+    <img src={logoPng} alt="Chatbot Icon" className="w-14 h-8" />
+  );
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1 className="mb-2 tracking-[-.01em] text-orange-500">Chat Interface</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-
-      // <Button />
-
+      <Chatbot
+        apiEndpoint="http://localhost:3000/api/chatbot"
+        exampleQuestions={exampleQuestions}
+        privacyPolicyUrl="https://google.com"
+        logoElement={logoElement}
+        welcomeMessage="Hi there! I'm Catch-A-Ride's AI assistant. How can I help you today?"
+      />
     </>
   );
 }
