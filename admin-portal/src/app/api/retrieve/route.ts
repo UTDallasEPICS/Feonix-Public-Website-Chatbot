@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
         const query = body?.query;
-        const method = body?.method || "vector"; // 'vector' | 'keyword'
+        const method = body?.method || "vector"; // 'vector' | 'keyword' | 'hybrid'
         const top_k = Number(body?.top_k || 5);
         const useReranker = Boolean(body?.useReranker);
 
@@ -95,6 +95,78 @@ export async function POST(req: Request) {
 
             console.timeEnd("retrieve_total");
             return NextResponse.json({ results: sorted });
+        }
+
+        // Hybrid: combine vector and keyword search, rerank, and return top K
+        if (method === "hybrid") {
+            console.time("retrieve_hybrid_vector");
+            const queryEmbedding = await embeddings.embedQuery(query);
+            const vectorResults = await collection.query({
+                queryEmbeddings: [queryEmbedding],
+                nResults: Math.max(top_k * 2, 20), // fetch more for reranking
+            });
+            console.timeEnd("retrieve_hybrid_vector");
+
+            let vectorChunks: RetrievedItem[] = ((vectorResults.documents?.[0] || []) as any[]).map((chunkText: string, i: number) => ({
+                chunk: chunkText,
+                file: String(vectorResults.metadatas?.[0]?.[i]?.fileName ?? vectorResults.metadatas?.[0]?.[i]?.file ?? "unknown"),
+                distance: vectorResults.distances?.[0]?.[i] ?? null,
+            }));
+
+            // Keyword search over all docs
+            console.time("retrieve_hybrid_keyword");
+            const all = await collection.get({ include: ["documents", "metadatas"] });
+            const terms = tokenize(query);
+            const docsRaw = all.documents ?? [];
+            const metasRaw = all.metadatas ?? [];
+            const docsArray: any[] = Array.isArray(docsRaw[0]) ? docsRaw[0] : docsRaw;
+            const metasArray: any[] = Array.isArray(metasRaw[0]) ? metasRaw[0] : metasRaw;
+            let keywordChunks: RetrievedItem[] = (docsArray || []).map((doc: string, i: number) => ({
+                chunk: doc,
+                file: String(metasArray?.[i]?.fileName ?? metasArray?.[i]?.file ?? "unknown"),
+                distance: null,
+                rerankScore: keywordScore(String(doc ?? ""), terms),
+            }));
+            // Only keep those with some keyword match
+            keywordChunks = keywordChunks.filter((d) => (d.rerankScore ?? 0) > 0);
+            // Take top N by keyword score
+            keywordChunks = keywordChunks.sort((a, b) => (b.rerankScore ?? 0) - (a.rerankScore ?? 0)).slice(0, Math.max(top_k * 2, 20));
+            console.timeEnd("retrieve_hybrid_keyword");
+
+            // Merge and deduplicate by chunk+file
+            const seen = new Set<string>();
+            const allCandidates: RetrievedItem[] = [...vectorChunks, ...keywordChunks].filter((item) => {
+                const key = item.chunk + "|" + item.file;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+
+            // Rerank all candidates
+            let reranked: RetrievedItem[] = allCandidates;
+            if (useReranker) {
+                console.time("retrieve_hybrid_rerank");
+                const rerankModel = process.env.RERANK_EMBED_MODEL || process.env.EMBED_MODEL || DEFAULT_EMBED_MODEL;
+                const reranker = new HuggingFaceInferenceEmbeddings({
+                    apiKey: process.env.HUGGINGFACE_API_KEY,
+                    model: rerankModel,
+                });
+                const candidateTexts: string[] = reranked.map((f: RetrievedItem) => f.chunk);
+                const [qEmb, candidateEmbeds] = await Promise.all([
+                    reranker.embedQuery(query),
+                    reranker.embedDocuments(candidateTexts),
+                ]);
+                reranked = reranked.map((f: RetrievedItem, i: number) => ({
+                    ...f,
+                    rerankScore: cosine(qEmb, candidateEmbeds[i]),
+                }));
+                // Sort by rerankScore desc
+                reranked = reranked.sort((a: RetrievedItem, b: RetrievedItem) => (b.rerankScore ?? 0) - (a.rerankScore ?? 0));
+                console.timeEnd("retrieve_hybrid_rerank");
+            }
+            // Return top K
+            console.timeEnd("retrieve_total");
+            return NextResponse.json({ results: reranked.slice(0, top_k) });
         }
 
         // Default: vector retrieval
