@@ -130,9 +130,12 @@ const docEntry = await prisma.document.create({
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { fileId } = await request.json();
+    const fileId = parseInt(params.id);
 
     if (!fileId)
       return NextResponse.json({ error: "fileId is required" }, { status: 400 });
@@ -149,7 +152,7 @@ export async function DELETE(request: Request) {
 
     const collection = await getOrCreateCollection(embeddings);
 
-    // get vector ids
+    // find vector IDs
     const result = await collection.get({
       where: { fileId },
       limit: 99999,
@@ -161,10 +164,7 @@ export async function DELETE(request: Request) {
       await collection.delete({ ids: idsToDelete });
     }
 
-    // delete prisma row
-    await prisma.document.delete({
-      where: { id: fileId },
-    });
+    await prisma.document.delete({ where: { id: fileId } });
 
     return NextResponse.json({
       success: true,
