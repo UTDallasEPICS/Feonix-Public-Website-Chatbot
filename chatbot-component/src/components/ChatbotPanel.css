@@ -1,0 +1,79 @@
+@media (max-width: 768px) {
+    .mobile-open {
+        bottom: 0;
+        right: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+
+    .mobile-closed {
+        display: none;
+    }
+}
+
+@media (min-width: 769px) {
+
+    .mobile-open,
+    .mobile-closed {
+        display: flex;
+    }
+}
+
+@keyframes delay-100 {
+
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+    }
+
+    30% {
+        opacity: 1;
+    }
+}
+
+@keyframes delay-200 {
+
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+    }
+
+    60% {
+        opacity: 1;
+    }
+}
+
+.delay-100 {
+    animation: delay-100 1.4s infinite;
+}
+
+.delay-200 {
+    animation: delay-200 1.4s infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--color-navy) 20%, transparent);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--color-navy) 35%, transparent);
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--color-navy) 20%, transparent) transparent;
+}

@@ -1,135 +1,125 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-/**
- * Handles the POST request for the chatbot API.
- * This function processes the incoming message and returns a reply with references.
- * @param {Request} req The incoming request object.
- * @returns {NextResponse} The response containing the chatbot's reply.
- */
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: CORS_HEADERS,
+  });
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { message } = body;
+    const { message } = await req.json();
 
-    // Validate message
-    if (!message || typeof message !== 'string') {
-      return jsonResponse({ error: 'No valid message provided' }, 400);
+    if (!message || typeof message !== "string") {
+      return NextResponse.json(
+        { error: "No valid message provided" },
+        { status: 400, headers: CORS_HEADERS }
+      );
     }
 
-    const lower = message.toLowerCase();
+    const lower = message.toLowerCase().trim();
 
-    // Example: keyword groups for variation & synonyms
-    const responses = [
+    // Will store in DB later..
+    const defaultQuestions = [
       {
-        keywords: ['hello', 'hi', 'hey', 'greetings', 'yo'],
-        replies: [
-          "Hello there! 👋",
-          "Hey! How’s it going?",
-          "Hi! What’s up?"
-        ],
-        references: ["https://en.wikipedia.org/wiki/Greeting"]
+        query: "What is Catch a Ride?",
+        answer:
+          "**Catch a Ride** is a community mobility service that helps people facing transportation barriers get wherever they need to go—such as medical appointments, work, school, errands, or community events. It's operated by **Feonix - Mobility Rising**. Availability and any trip-purpose rules can vary by initiative and region.",
       },
       {
-        keywords: ['bye', 'goodbye', 'see you'],
-        replies: [
-          "Goodbye! Have a great day!",
-          "See you later!",
-          "Take care, bye!"
-        ],
-        references: ["https://en.wikipedia.org/wiki/Farewell"]
+        query: "Am I eligible to use Catch a Ride?",
+        answer:
+          "Eligibility depends on your local program. Many riders qualify based on residency and trip purpose (for example: medical, work, school). I can share the general criteria and a quick check form. Would you like the eligibility checklist for your area?",
       },
       {
-        keywords: ['thank you', 'thanks', 'thx'],
-        replies: [
-          "You're welcome! 😊",
-          "No problem at all!",
-          "Glad I could help!"
-        ],
-        references: ["https://en.wikipedia.org/wiki/Gratitude"]
+        query: "How do I book a ride?",
+        answer:
+          "You can book in the web portal or app. You'll choose pickup/drop-off locations, date/time, and trip purpose. If you're new, create an account first. Need the step-by-step guide?",
       },
       {
-        keywords: ['how are you'],
-        replies: [
-          "I’m doing great, thanks for asking! How about you?",
-          "I’m all good! What about you?",
-          "Fantastic! How are you feeling today?"
-        ],
-        references: ["https://www.wikihow.com/Answer-How-Are-You"]
+        query: "Do you offer wheelchair-accessible vehicles?",
+        answer:
+          "Yes—accessible options are available where supported. Select your accessibility needs when creating your booking, and we'll match you with an appropriate provider.",
       },
       {
-        keywords: ['joke', 'funny'],
-        replies: [
-          "Why don't scientists trust atoms? Because they make up everything!",
-          "Parallel lines have so much in common… it’s a shame they’ll never meet.",
-          "Why was the math book sad? Because it had too many problems."
-        ],
-        references: ["https://pun.me/pages/funny-jokes.php"]
+        query: "How much does it cost?",
+        answer:
+          "Costs vary by program. Some trips are covered by a mobility wallet or a CBA sponsor. If you pay directly, you can use a rider-funded wallet or a personal card (where supported).",
       },
       {
-        keywords: ['help', 'what can you do'],
-        replies: [
-          "I can greet you, tell jokes, answer simple questions, and chat a little.",
-          "Try saying 'hello', 'joke', 'bye', or 'thank you'!",
-          "I’m here for simple chat. Ask me something!"
-        ],
-        references: ["https://developer.mozilla.org/", "https://nextjs.org/docs"]
-      }
+        query: "What is a mobility wallet?",
+        answer:
+          "It's a preloaded balance used to pay for rides. It may be grant-funded or rider-funded. Wallet type depends on your program.",
+      },
+      {
+        query: "Can I use both a CBA invoice and my wallet for the same trip?",
+        answer:
+          "No. Riders use one payment method consistently for a given trip purpose. CBA invoice and rider-funded wallet aren't combined for the same purpose.",
+      },
+      {
+        query: "What if I need to cancel or change my ride?",
+        answer:
+          "You can modify or cancel in the portal or app within the allowed window. Late cancellations or no-shows may affect eligibility or fees, depending on your program.",
+      },
+      {
+        query: "Do you serve my area?",
+        answer:
+          "Service areas vary. I can check by city/zip to see if there are initiatives near you. Would you like to look up your area?",
+      },
+      {
+        query:
+          "What's the difference between Uber rides and other providers for returns?",
+        answer:
+          "Return-trip rules can differ. Uber supports round trips and also offers flexible return options that most other providers do not. However, Uber is not available in all areas—especially in many rural regions where coverage is limited.",
+      },
+      {
+        query: "How do I add money to my rider-funded wallet?",
+        answer:
+          "To add money to a rider-funded wallet, you'll need to call our Support Center. A specialist will help set up your wallet and process the payment. Once added, funds will be available for rides.",
+      },
+      {
+        query: "I forgot my password.",
+        answer:
+          "Use Forgot password on the sign-in page. We'll email a reset link from noreply@catch-a-ride.skedgo.com. If you don't see it, check spam or ask a specialist for help.",
+      },
+      {
+        query: "Are service animals allowed?",
+        answer:
+          "Yes. Service animals are welcome. Please note it during booking so the driver is prepared.",
+      },
+      {
+        query: "How do I contact a person?",
+        answer:
+          "I can connect you with a support specialist during business hours or share a contact form. Would you like the phone number or form link?",
+      },
     ];
 
-    // Default reply
-    let reply = "I don't understand that. Please try another phrase.";
-    let references = [
-      "https://developer.mozilla.org/",
-      "https://nextjs.org/docs",
-      "https://ai.google.dev/"
-    ];
+    const normalized = lower.replace(/[^\w\s]/g, "");
 
-    // Match intent
-    for (const { keywords, replies, references: ref } of responses) {
-      if (keywords.some(k => lower.includes(k))) {
-        // Pick a random reply from replies array
-        reply = replies[Math.floor(Math.random() * replies.length)];
-        references = ref;
-        break;
-      }
+    const match = defaultQuestions.find((q) =>
+      normalized.includes(q.query.toLowerCase().replace(/[^\w\s]/g, ""))
+    );
+
+    if (match) {
+      return NextResponse.json({ message: match.answer}, {headers: CORS_HEADERS });
     }
 
-    return jsonResponse({ reply, references });
+    // No match and we will then use the LLM
+    return NextResponse.json({ message: message }, {headers: CORS_HEADERS });
 
   } catch (error) {
-    console.error('API Error:', error);
-    return jsonResponse({ error: 'Something went wrong on the server.' }, 500);
+    console.error("API Error:", error);
+    return NextResponse.json(
+      { error: "Something went wrong on the server." },
+      { status: 500, headers: CORS_HEADERS }
+    );
   }
 }
 
-/**
- * Handle CORS preflight requests (OPTIONS).
- */
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: corsHeaders(),
-  });
-}
-
-/**
- * Utility: JSON response with CORS headers
- */
-function jsonResponse(data: unknown, status = 200) {
-  return new NextResponse(JSON.stringify(data), {
-    status,
-    headers: corsHeaders(),
-  });
-}
-
-/**
- * Utility: CORS headers
- * Adjust "Access-Control-Allow-Origin" for production security.
- */
-function corsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*', // 🔒 change to your frontend domain in production
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}

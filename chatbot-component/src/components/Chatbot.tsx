@@ -1,152 +1,131 @@
-"use client";
-import React, { useState, useRef, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { ChatbotButton } from "./ChatbotButton.tsx";
+import { ChatbotPanel } from "./ChatbotPanel.tsx";
+import type { Message, ChatbotConfig, ChatbotProps } from "../types/chat.ts";
+import {
+  createChatSession,
+  saveMessage,
+  clearChatHistory,
+  sendMessage,
+} from "../services/chatService.ts";
 
-export default function Chatbot() {
-  const [message, setMessage] = useState("");
-  const [chatLog, setChatLog] = useState<
-    { sender: string; text: string; type: string; references?: string[] }[]
-  >([]);
+export function Chatbot({
+  apiEndpoint,
+  exampleQuestions,
+  privacyPolicyUrl,
+  logoElement,
+  welcomeMessage,
+}: ChatbotProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
-
-
-
-  // Auto-scroll chat
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatLog]);
+    const initializeSession = async () => {
+      try {
+        const newSessionId = await createChatSession();
+        setSessionId(newSessionId);
+      } catch (err) {
+        console.error("Failed to initialize chat session:", err);
+        setError("Failed to start chat session");
+      }
+    };
 
-  const sendMessage = async () => {
-    if (!message.trim() || isLoading) return;
+    initializeSession();
+  }, []);
 
-    const userMessage = message.trim();
-    setChatLog((prev) => [
-      ...prev,
-      { sender: "You", text: userMessage, type: "user" },
-    ]);
-    setMessage("");
-    setIsLoading(true);
+  const handleSendMessage = async (messageText: string) => {
+    if (!sessionId || !messageText.trim()) return;
 
     try {
-      const res = await fetch("http://localhost:3000/api/chatbot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
+      setError(null);
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        content: messageText,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+      await saveMessage(sessionId, "user", messageText);
+
+      setIsLoading(true);
+
+      const response = await sendMessage(apiEndpoint, {
+        message: messageText,
+        messages: [...messages, userMessage],
+        sessionId,
       });
 
-      const data = await res.json();
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "bot",
+        content: response.message,
+        timestamp: new Date(),
+      };
 
-      setChatLog((prev) => [
-        ...prev,
-        {
-          sender: "Mr. Feonix",
-          text: data.reply,
-          type: "bot",
-          references: data.references || [],
-        },
-      ]);
+      setMessages((prev) => [...prev, botMessage]);
+      await saveMessage(sessionId, "bot", response.message);
     } catch (err) {
-      console.error("Error fetching bot reply:", err);
-      setChatLog((prev) => [
-        ...prev,
-        { sender: "Mr. Feonix", text: "Error replying! Please try again.", type: "bot" },
-      ]);
+      console.error("Failed to send message:", err);
+      const errorText =
+        err instanceof Error ? err.message : "Failed to send message";
+      setError(errorText);
+
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        role: "system",
+        content: `Error: ${errorText}. Please try again.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleClearChat = async () => {
+    if (!sessionId) return;
+
+    try {
+      await clearChatHistory(sessionId);
+      setMessages([]);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to clear chat:", err);
+      setError("Failed to clear chat");
+    }
+  };
+
+  const config: ChatbotConfig = {
+    sessionId,
+    apiEndpoint,
+    exampleQuestions,
+    privacyPolicyUrl,
+    logoElement,
+    welcomeMessage,
+  };
+
   return (
-    <div
-
-className="fixed top-24 bottom-24 left-256 right-4 bg-orange-50 rounded-3xl shadow-xl overflow-hidden flex flex-col border border-orange-800"
-    >
-      {/* Header */}
-      <div className="bg-red-600 text-white p-5 shadow-md rounded-t-3xl">
-        <h1 className="text-2xl font-bold text-left">Mr. Feonix</h1>
-      </div>
-
-      {/* Chat Log */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {chatLog.map((chat, idx) => (
-          <div
-            key={idx}
-            className={`flex ${
-              chat.type === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-[75%] rounded-2xl p-2 shadow-md text-sm ${
-                chat.type === "user"
-                  ? "bg-orange-500 text-white rounded-br-none"
-                  : "bg-gray-200 text-gray-800 rounded-bl-none"
-              }`}
-            >
-              <div className="font-semibold">{chat.sender}</div>
-              <div>{chat.text}</div>
-
-              {chat.type === "bot" && chat.references && chat.references?.length > 0 && (
-                <div className="mt-1 text-xs text-gray-600">
-                  <div className="font-semibold">References:</div>
-                  <ul className="list-disc list-inside space-y-1">
-                    {chat.references!.map((ref, i) => (
-                      <li key={i}>
-                        <a
-                          href={ref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-red-600 underline"
-                        >
-                          {ref}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="max-w-[75%] rounded-2xl p-2 shadow-md bg-gray-200 text-gray-800 rounded-bl-none text-sm">
-              <div className="font-semibold">Mr. Feonix</div>
-              <div>...</div>
-            </div>
-          </div>
-        )}
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="p-5 bg-orange-50 border-t border-gray-200">
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            className="flex-1 p-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") sendMessage();
-            }}
-            placeholder="What do you need help with?"
-            disabled={isLoading}
-          />
-          <button
-            onClick={sendMessage}
-            className="bg-red-600 text-white rounded-xl px-3 py-2 shadow-md hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-            disabled={isLoading}
-          >
-            Send
-          </button>
-        </div>
-      </div>
-
-
-
-
-    </div>
+    <>
+      <ChatbotButton
+        isOpen={isOpen}
+        onClick={() => setIsOpen(!isOpen)}
+        unreadCount={0}
+      />
+      {isOpen && (
+        <ChatbotPanel
+          isOpen={isOpen}
+          messages={messages}
+          isLoading={isLoading}
+          config={config}
+          onClose={() => setIsOpen(false)}
+          onSend={handleSendMessage}
+          onClearChat={handleClearChat}
+        />
+      )}
+    </>
   );
 }

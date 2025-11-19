@@ -16,6 +16,7 @@ export async function GET(
   const { provider: rawProvider } = await params
   const code = request.nextUrl.searchParams.get("code")
   const state = request.nextUrl.searchParams.get("state")
+
   const provider = z.enum(oAuthProviders).parse(rawProvider)
 
   if (typeof code !== "string" || typeof state !== "string") {
@@ -26,13 +27,17 @@ export async function GET(
     )
   }
 
-  const oAuthClient = getOAuthClient(provider)
+  let oAuthUser;
+  let allowed = true;
+
   try {
-    const oAuthUser = await oAuthClient.fetchUser(code, state, await cookies())
-    console.log("**", oAuthUser, provider)
-    const user = await connectUserToAccount(oAuthUser, provider)
-    
-    await createUserSession(user, await cookies())
+    const oAuthClient = getOAuthClient(provider)
+    oAuthUser = await oAuthClient.fetchUser(code, state, await cookies())
+
+    // allowed = await prisma.allowedUser.findUnique({
+    //   where: { email: oAuthUser.email },
+    // })
+
   } catch (error) {
     console.error(error)
     return redirect(
@@ -41,6 +46,17 @@ export async function GET(
       )}`
     )
   }
+
+  // if (!allowed) {
+  //   return redirect(
+  //     `/login?oauthError=${encodeURIComponent(
+  //       "Access denied. Your account is not authorized."
+  //     )}`
+  //   )
+  // }
+
+  const user = await connectUserToAccount(oAuthUser, provider)
+  await createUserSession(user, await cookies())
 
   return redirect("/")
 }
