@@ -75,44 +75,44 @@ export default function FileTable() {
             <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl">
                 <h2 className="text-3xl font-semibold text-[#b63aa6] mb-4">File Manager</h2>
                 {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <table className="w-full border-collapse">
-                    <thead>
-                        <tr className="bg-gray-100 text-left text-gray-600 uppercase text-sm">
-                            <th className="p-3">Name</th>
-                            <th className="p-3">Size</th>
-                            <th className="p-3">Type</th>
-                            <th className="p-3">Date</th>
-                            <th className="p-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {files.map((file) => (
-                            <tr key={file.id} className="border-b hover:bg-gray-50">
-                                <td className="p-3">{file.name}</td>
-                                <td className="p-3">{file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : "-"}</td>
-                                <td className="p-3">{prettyType(file.fileType)}</td>
-                                <td className="p-3">{file.createdAt ? new Date(file.createdAt).toLocaleString() : "-"}</td>
-                                <td className="p-3 space-x-2">
-                                    <button onClick={() => handleView(file.id)} className="bg-orange-400 text-white px-3 py-1 rounded text-sm hover:opacity-90">
-                                        👁 View
-                                    </button>
-                                    <button onClick={() => handleDelete(file.id)} className="bg-pink-600 text-white px-3 py-1 rounded text-sm hover:opacity-90">
-                                        🗑 Remove
-                                    </button>
-                                </td>
+                    <div>Loading...</div>
+                ) : (
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="bg-gray-100 text-left text-gray-600 uppercase text-sm">
+                                <th className="p-3">Name</th>
+                                <th className="p-3">Size</th>
+                                <th className="p-3">Type</th>
+                                <th className="p-3">Date</th>
+                                <th className="p-3">Actions</th>
                             </tr>
-                        ))}
-                        {files.length === 0 && (
-                            <tr>
-                                <td className="p-3" colSpan={5}>
-                                    No files
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {files.map((file) => (
+                                <tr key={file.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-3">{file.name}</td>
+                                    <td className="p-3">{file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : "-"}</td>
+                                    <td className="p-3">{prettyType(file.fileType)}</td>
+                                    <td className="p-3">{file.createdAt ? new Date(file.createdAt).toLocaleString() : "-"}</td>
+                                    <td className="p-3 space-x-2">
+                                        <button onClick={() => handleView(file.id)} className="bg-orange-400 text-white px-3 py-1 rounded text-sm hover:opacity-90">
+                                            👁 View
+                                        </button>
+                                        <button onClick={() => handleDelete(file.id)} className="bg-pink-600 text-white px-3 py-1 rounded text-sm hover:opacity-90">
+                                            🗑 Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {files.length === 0 && (
+                                <tr>
+                                    <td className="p-3" colSpan={5}>
+                                        No files
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 )}
             </div>
         </div>
