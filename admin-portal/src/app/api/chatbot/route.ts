@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { ChatOllama } from "@langchain/ollama";
+import { augment } from "../../../../lib/utils";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -13,9 +15,11 @@ export async function OPTIONS() {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { message } = await req.json();
+const { message, messages: fullHistory } = await req.json();
+
+
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -26,7 +30,9 @@ export async function POST(req: Request) {
 
     const lower = message.toLowerCase().trim();
 
-    // Will store in DB later..
+    // ------------------------------
+    // STATIC FAQ LIST (UNCHANGED)
+    // ------------------------------
     const defaultQuestions = [
       {
         query: "What is Catch a Ride?",
@@ -102,18 +108,49 @@ export async function POST(req: Request) {
     ];
 
     const normalized = lower.replace(/[^\w\s]/g, "");
-
     const match = defaultQuestions.find((q) =>
       normalized.includes(q.query.toLowerCase().replace(/[^\w\s]/g, ""))
     );
 
+    // ------------------------------
+    // IF STATIC FAQ MATCH → RETURN IT
+    // ------------------------------
     if (match) {
-      return NextResponse.json({ message: match.answer}, {headers: CORS_HEADERS });
+      return NextResponse.json(
+        { message: match.answer, source: "faq" },
+        { headers: CORS_HEADERS }
+      );
     }
 
-    // No match and we will then use the LLM
-    return NextResponse.json({ message: message }, {headers: CORS_HEADERS });
+    // ------------------------------
+    // ELSE → FALLBACK TO AI RESPONSE
+    // ------------------------------
+// Convert frontend messages → history array for augment()
+const history = Array.isArray(fullHistory)
+  ? fullHistory.map((m: any) => ({
+      role: m.role,
+      message: m.content,
+    }))
+  : [];
+  console.log("=== FULL HISTORY RECEIVED ===");
+console.log(history);
 
+    const context = [];
+
+    const augmentedPrompt = augment(history, context, message);
+
+    const llm = new ChatOllama({
+      model: "gpt-oss:20b",
+      temperature: 0,
+      maxRetries: 2,
+    });
+
+    const aiResponse = (await llm.invoke(augmentedPrompt)).content;
+
+    return NextResponse.json(
+      { message: aiResponse, source: "ai" },
+      { headers: CORS_HEADERS }
+    );
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(
@@ -122,4 +159,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
