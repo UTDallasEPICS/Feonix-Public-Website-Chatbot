@@ -18,7 +18,7 @@ export default async function RootLayout({
       <body className="flex min-h-screen bg-gray-100">
         <UserProvider user={user}>
           <Sidebar />
-          <main className="flex-1 p-8">{children}</main>
+          <main className="flex-1">{children}</main>
         </UserProvider>
       </body>
     </html>
