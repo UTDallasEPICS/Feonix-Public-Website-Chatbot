@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ChatOllama } from "@langchain/ollama";
-import { augment } from "../../../../lib/utils";
+import { DocumentRetriever, RetrievedItem } from "../../../lib/retriever";
+import { augment, Message, MessageRole } from "../../../lib/utils";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -15,25 +16,13 @@ export async function OPTIONS() {
   });
 }
 
-export async function POST(req: NextRequest) {
-  try {
-const { message, messages: fullHistory } = await req.json();
+interface RequestData {
+  message: string;
+  history?: Message[]; 
+}
 
-
-
-    if (!message || typeof message !== "string") {
-      return NextResponse.json(
-        { error: "No valid message provided" },
-        { status: 400, headers: CORS_HEADERS }
-      );
-    }
-
-    const lower = message.toLowerCase().trim();
-
-    // ------------------------------
-    // STATIC FAQ LIST (UNCHANGED)
-    // ------------------------------
-    const defaultQuestions = [
+// May turn into database collection
+const defaultQuestions = [
       {
         query: "What is Catch a Ride?",
         answer:
@@ -105,87 +94,120 @@ const { message, messages: fullHistory } = await req.json();
         answer:
           "I can connect you with a support specialist during business hours or share a contact form. Would you like the phone number or form link?",
       },
-    ];
+];
+
+
+export async function POST(req: NextRequest) {
+  try {
+    const { message, history }: RequestData = await req.json();
+
+    if (!message || typeof message !== "string") {
+      return new Response(
+        JSON.stringify({ error: "No valid message provided" }),
+        {
+          status: 400,
+          headers: {
+            ...CORS_HEADERS,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    const lower = message.toLowerCase().trim();
 
     const normalized = lower.replace(/[^\w\s]/g, "");
     const match = defaultQuestions.find((q) =>
       normalized.includes(q.query.toLowerCase().replace(/[^\w\s]/g, ""))
     );
 
-    // ------------------------------
-    // IF STATIC FAQ MATCH → RETURN IT
-    // ------------------------------
     if (match) {
-      return NextResponse.json(
-        { message: match.answer, source: "faq" },
-        { headers: CORS_HEADERS }
+      return new Response(
+        JSON.stringify({ message: match.answer, source: "faq" }),
+        {
+          headers: {
+            ...CORS_HEADERS,
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
-    // ------------------------------
-    // ELSE → FALLBACK TO AI RESPONSE
-    // ------------------------------
-// Convert frontend messages → history array for augment()
-const history = Array.isArray(fullHistory)
-  ? fullHistory.map((m: any) => ({
-      role: m.role,
-      message: m.content,
-    }))
-  : [];
-  console.log("=== FULL HISTORY RECEIVED ===");
-console.log(history);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const historyData: Message[] = history ?? [];
+          const retriever = new DocumentRetriever();
+          
+          const context: RetrievedItem[] = await retriever.retrieve(message, {
+            method: "hybrid",
+            top_k: 5,
+            useReranker: true,
+          });
 
-    let context: any[] = [];
+          const augmentedPrompt = augment(historyData, context, message);
+          
+          const llm = new ChatOllama({
+            model: "llama3.1:8b",
+            temperature: 0,
+            maxRetries: 2,
+            streaming: true,
+            callbacks: [
+              {
+                handleLLMNewToken(token: string) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ token })}\n\n`)
+                  );
+                },
+                handleLLMEnd() {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`)
+                  );
+                  controller.close();
+                },
+                handleLLMError(error: Error) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ error: error.message })}\n\n`)
+                  );
+                  controller.close();
+                },
+              },
+            ],
+          });
 
-try {
-  const retrievalRes = await fetch(
-    `http://localhost:3000/api/retrieve`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: message,
-        method: "hybrid",     // can switch to 'vector' if you want speed
-        top_k: 5,
-        useReranker: true,
-      }),
-    }
-  );
-
-  const retrievalJson = await retrievalRes.json();
-
-  if (retrievalJson.results && Array.isArray(retrievalJson.results)) {
-    context = retrievalJson.results.map((item: any) => ({
-      text: item.chunk,
-      fileName: item.file,
-      distance: item.distance ?? null,
-      rerankScore: item.rerankScore ?? null,
-    }));
-  }
-
-  console.log("=== CHROMA RETRIEVED CONTEXT ===", context);
-} catch (err) {
-  console.error("Context retrieval error:", err);
-}
-
-    const augmentedPrompt = augment(history, context, message);
-
-    const llm = new ChatOllama({
-model: "llama3.1:8b",      temperature: 0,
-      maxRetries: 2,
+          await llm.invoke(augmentedPrompt);
+        } catch (error) {
+          console.error("Streaming error:", error);
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ error: "Streaming failed" })}\n\n`
+            )
+          );
+          controller.close();
+        }
+      },
     });
 
-    const aiResponse = (await llm.invoke(augmentedPrompt)).content;
-
-    return NextResponse.json(
-      { message: aiResponse, source: "ai" },
-      { headers: CORS_HEADERS }
-    );
+    return new Response(stream, {
+      headers: {
+        ...CORS_HEADERS,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("API Error:", error);
-    return NextResponse.json(
-      { error: "Something went wrong on the server." },
-      { status: 500, headers: CORS_HEADERS }
+    return new Response(
+      JSON.stringify({ error: "Something went wrong on the server." }),
+      {
+        status: 500,
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }
