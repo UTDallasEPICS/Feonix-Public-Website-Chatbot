@@ -8,9 +8,9 @@ export default function Sidebar() {
   const { user } = useUser();
 
   return (
-    <div className="bg-[#2f3338] text-orange-400 h-screen w-64 flex flex-col justify-between py-6">
+    <div className="bg-[#2E64DF] text-white h-screen w-64 flex flex-col justify-between py-6">
       <div>
-        <h1 className="text-3xl font-extrabold px-6 mb-8 border-b border-[#a84aa8] pb-2 text-orange-300">
+        <h1 className="text-3xl font-extrabold px-6 mb-8 border-b border-[#F5BD43] pb-2 text-white">
           Admin Dashboard
         </h1>
 
@@ -18,7 +18,7 @@ export default function Sidebar() {
           <li>
             <Link
               href="/file-manager"
-              className="flex items-center gap-3 text-orange-300 hover:text-white"
+              className="flex items-center gap-3 text-white hover:text-yellow-300"
             >
               <FaFileAlt /> <span className="ml-2">File Manager</span>
             </Link>
@@ -26,17 +26,9 @@ export default function Sidebar() {
           <li>
             <Link
               href="/add-file"
-              className="flex items-center gap-3 text-orange-300 hover:text-white"
+              className="flex items-center gap-3 text-white hover:text-yellow-300"
             >
               <FaPlusSquare /> <span className="ml-2">Add File</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/file-search"
-              className="flex items-center gap-3 text-orange-300 hover:text-white"
-            >
-              <FaSearch /> <span className="ml-2">File Search</span>
             </Link>
           </li>
         </ul>
@@ -56,7 +48,7 @@ export default function Sidebar() {
       </div>
 
       <div className="px-6">
-        <img src="/logo.png" alt="Logo" className="w-32 mx-auto opacity-80" />
+        <img src="/mini-logo.png" alt="Logo" className="w-32 mx-auto opacity-80" />
       </div>
     </div>
   );
