@@ -77,7 +77,7 @@ export interface WelcomeScreenProps {
 
 export interface ApiRequest {
   message: string;
-  messages: Message[];
+  history: Message[];
   sessionId: string;
 }
 

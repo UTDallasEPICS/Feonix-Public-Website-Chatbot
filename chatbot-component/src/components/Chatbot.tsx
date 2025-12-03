@@ -8,7 +8,7 @@ import {
   createChatSession,
   saveMessage,
   clearChatHistory,
-  sendMessage,
+  sendMessageStream,
 } from "../services/chatService.ts";
 
 export function Chatbot({
@@ -24,9 +24,6 @@ export function Chatbot({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [_error, setError] = useState<string | null>(null);
 
-  // small helper for the fake streaming typing effect
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
   useEffect(() => {
     const initializeSession = async () => {
       try {
@@ -41,7 +38,6 @@ export function Chatbot({
     initializeSession();
   }, []);
 
-  // updates the last message in the list (used for streaming)
   function updateLastMessage(content: string) {
     setMessages((prev) => {
       if (prev.length === 0) return prev;
@@ -65,25 +61,13 @@ export function Chatbot({
         timestamp: new Date(),
       };
 
-      // push user message to UI immediately
       const nextMessages = [...messages, userMessage];
       setMessages(nextMessages);
 
-      // persist user message
       await saveMessage(sessionId, "user", messageText);
 
       setIsLoading(true);
 
-      // call your existing backend service (no streaming)
-      const response = await sendMessage(apiEndpoint, {
-        message: messageText,
-        messages: nextMessages,
-        sessionId,
-      });
-
-      const fullBotText: string = response.message ?? "";
-
-      // add empty bot message as placeholder for "streaming"
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "bot",
@@ -92,18 +76,37 @@ export function Chatbot({
       };
 
       setMessages((prev) => [...prev, botMessage]);
+      let fullBotText = "";
 
-      // fake streaming effect: reveal text gradually
-      let visibleText = "";
-      for (const char of fullBotText) {
-        visibleText += char;
-        updateLastMessage(visibleText);
-        // tweak delay (ms) for speed of “typing”
-        await sleep(10);
-      }
+      await sendMessageStream(
+        apiEndpoint,
+        {
+          message: messageText,
+          history: nextMessages,
+          sessionId,
+        },
+        (token) => {
+          fullBotText += token;
+          updateLastMessage(fullBotText);
+        },
+        (errorText) => {
+          console.error("Streaming error:", errorText);
+          setError(errorText);
 
-      // save full bot message to DB once
-      await saveMessage(sessionId, "bot", fullBotText);
+          const errorMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: "system",
+            content: `Error: ${errorText}. Please try again.`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev.slice(0, -1), errorMessage]);
+        },
+        async () => {
+          if (fullBotText) {
+            await saveMessage(sessionId, "bot", fullBotText);
+          }
+        }
+      );
     } catch (err) {
       console.error("Failed to send message:", err);
       const errorText =
@@ -132,6 +135,8 @@ export function Chatbot({
     } catch (err) {
       console.error("Failed to clear chat:", err);
       setError("Failed to clear chat");
+    } finally {
+      setIsLoading(false);
     }
   };
 
