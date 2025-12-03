@@ -9,7 +9,7 @@ export function ChatHeader({
   title = "Assistant",
 }: ChatHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-4 py-4 bg-navy text-white border-b border-primary-blue">
+    <div className="flex items-center justify-between px-4 py-4 bg-primary-blue text-white border-b border-primary-blue">
       <div className="flex items-center gap-3">
         {logoElement ? (
           logoElement
@@ -24,19 +24,19 @@ export function ChatHeader({
       <div className="flex gap-2">
         <button
           onClick={onClearChat}
-          className="p-1.5 hover:bg-primary-blue transition-colors"
+          className="p-1.5 hover:scale-110 hover:bg-white/10 rounded-md transition-all duration-200"
           aria-label="Clear chat"
           title="Clear chat"
         >
-          <FiRotateCcw size={18} />
+          <FiRotateCcw size={18} className="text-white" />
         </button>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-primary-blue transition-colors"
+          className="p-1.5 hover:scale-110 hover:bg-white/10 rounded-md transition-all duration-200"
           aria-label="Close chatbot"
           title="Close"
         >
-          <FiX size={18} />
+          <FiX size={18} className="text-white" />
         </button>
       </div>
     </div>
