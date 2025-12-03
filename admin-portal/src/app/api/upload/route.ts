@@ -14,15 +14,12 @@ import { getOrCreateCollection } from "../../../lib/chroma";
 
 export const runtime = "nodejs";
 
-let temp = false
-
 const ALLOWED_TYPES = [
   "application/pdf",
   "text/plain",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-// ⭐ Load text by writing the file → reading it → deleting it
 async function loadTextFromBuffer(buffer: Buffer, ext: string, fileName: string) {
   const tempPath = path.join(process.cwd(), fileName);
 
@@ -84,7 +81,7 @@ export async function POST(request: Request) {
       // Load text by temp-writing the file
       const text = await loadTextFromBuffer(buffer, ext, file.name);
 
-      if (!text || temp) {
+      if (!text) {
         failed.push({ file: file.name, status: "failed to extract text" });
         continue;
       }
@@ -125,7 +122,6 @@ export async function POST(request: Request) {
         chunks: chunks.length,
       });
 
-      temp = true;
     }
 
     return NextResponse.json({
