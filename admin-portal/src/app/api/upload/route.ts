@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
-import { TextLoader } from "langchain/document_loaders/fs/text";
+import { TextLoader } from "@langchain/classic/document_loaders/fs/text"
 
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { getOrCreateCollection } from "../../../lib/chroma";
 
+
 export const runtime = "nodejs";
+
+let temp = false
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -66,35 +69,35 @@ export async function POST(request: Request) {
     });
 
     const collection = await getOrCreateCollection(embeddings);
-    const results: any[] = [];
+    const passed: any[] = [];
+    const failed: any[] = [];
 
     for (const file of files) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        results.push({ file: file.name, status: "unsupported type" });
+        failed.push({ file: file.name, status: "unsupported type" });
         continue;
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
       const ext = path.extname(file.name).toLowerCase();
 
-      // ⭐ Load text by temp-writing the file
+      // Load text by temp-writing the file
       const text = await loadTextFromBuffer(buffer, ext, file.name);
 
-      if (!text) {
-        results.push({ file: file.name, status: "failed to extract text" });
+      if (!text || temp) {
+        failed.push({ file: file.name, status: "failed to extract text" });
         continue;
       }
 
       // Save metadata → Prisma
-const docEntry = await prisma.document.create({
-  data: {
-    fileName: file.name,
-    fileType: file.type,
-    fileSize: file.size,
-    userId: Number(formData.get("userId")),
-  },
-});
-
+      const docEntry = await prisma.document.create({
+        data: {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          userId: Number(formData.get("userId")),
+        },
+      });
 
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
@@ -116,19 +119,26 @@ const docEntry = await prisma.document.create({
         })),
       });
 
-      results.push({
+      passed.push({
         file: file.name,
         status: "uploaded + embedded",
         chunks: chunks.length,
       });
+
+      temp = true;
     }
 
-    return NextResponse.json({ success: true, results });
+    return NextResponse.json({
+      success: true,
+      passed,
+      failed,
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
 
 export async function DELETE(
   request: Request,
