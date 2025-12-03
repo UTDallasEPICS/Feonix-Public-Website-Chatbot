@@ -135,13 +135,43 @@ const history = Array.isArray(fullHistory)
   console.log("=== FULL HISTORY RECEIVED ===");
 console.log(history);
 
-    const context = [];
+    let context: any[] = [];
+
+try {
+  const retrievalRes = await fetch(
+    `http://localhost:3000/api/retrieve`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: message,
+        method: "hybrid",     // can switch to 'vector' if you want speed
+        top_k: 5,
+        useReranker: true,
+      }),
+    }
+  );
+
+  const retrievalJson = await retrievalRes.json();
+
+  if (retrievalJson.results && Array.isArray(retrievalJson.results)) {
+    context = retrievalJson.results.map((item: any) => ({
+      text: item.chunk,
+      fileName: item.file,
+      distance: item.distance ?? null,
+      rerankScore: item.rerankScore ?? null,
+    }));
+  }
+
+  console.log("=== CHROMA RETRIEVED CONTEXT ===", context);
+} catch (err) {
+  console.error("Context retrieval error:", err);
+}
 
     const augmentedPrompt = augment(history, context, message);
 
     const llm = new ChatOllama({
-      model: "gpt-oss:20b",
-      temperature: 0,
+model: "llama3.1:8b",      temperature: 0,
       maxRetries: 2,
     });
 
