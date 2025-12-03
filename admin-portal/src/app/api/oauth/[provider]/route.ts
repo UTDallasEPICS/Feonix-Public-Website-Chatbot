@@ -13,53 +13,52 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ provider: string }> }
 ) {
-  const { provider: rawProvider } = await params
-  const code = request.nextUrl.searchParams.get("code")
-  const state = request.nextUrl.searchParams.get("state")
+  const { provider: rawProvider } = await params;
+  const code = request.nextUrl.searchParams.get("code");
+  const state = request.nextUrl.searchParams.get("state");
 
-  const provider = z.enum(oAuthProviders).parse(rawProvider)
+  let provider;
+  try {
+    provider = z.enum(oAuthProviders).parse(rawProvider);
+  } catch (error) {
+    return redirectWithError("Invalid OAuth provider.");
+  }
 
   if (typeof code !== "string" || typeof state !== "string") {
-    return redirect(
-      `/login?oauthError=${encodeURIComponent(
-        "Failed to connect. Please try again."
-      )}`
-    )
+    return redirectWithError("Failed to connect. Please try again.");
   }
 
   let oAuthUser;
   let allowed = true;
 
   try {
-    const oAuthClient = getOAuthClient(provider)
-    oAuthUser = await oAuthClient.fetchUser(code, state, await cookies())
+    const oAuthClient = getOAuthClient(provider);
+    oAuthUser = await oAuthClient.fetchUser(code, state, await cookies());
 
-    // allowed = await prisma.allowedUser.findUnique({
-    //   where: { email: oAuthUser.email },
-    // })
-
+    allowed = !!(await prisma.allowedUser.findUnique({
+      where: { email: oAuthUser.email },
+    }));
   } catch (error) {
-    console.error(error)
-    return redirect(
-      `/login?oauthError=${encodeURIComponent(
-        "Failed to connect. Please try again."
-      )}`
-    )
+    console.error("OAuth Error:", error);
+    return redirectWithError("Failed to connect. Please try again.");
   }
 
-  // if (!allowed) {
-  //   return redirect(
-  //     `/login?oauthError=${encodeURIComponent(
-  //       "Access denied. Your account is not authorized."
-  //     )}`
-  //   )
-  // }
+  if (!allowed) {
+    return redirectWithError("Access denied. Your account is not authorized.");
+  }
 
-  const user = await connectUserToAccount(oAuthUser, provider)
-  await createUserSession(user, await cookies())
+  const user = await connectUserToAccount(oAuthUser, provider);
+  await createUserSession(user, await cookies());
 
-  return redirect("/")
+  return redirect("/");
 }
+
+function redirectWithError(message: string) {
+  return redirect(
+    `/login?oauthError=${encodeURIComponent(message)}`
+  );
+}
+
 
 async function connectUserToAccount(
   { id, email, name }: { id: string; email: string; name: string },

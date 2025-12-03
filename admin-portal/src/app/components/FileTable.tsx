@@ -67,7 +67,7 @@ export default function FileTable() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Are you sure you want to delete this file?")) return;
+    if (!confirm(`Are you sure you want to delete this file?`)) return;
     try {
       const res = await fetch(`/api/upload/${id}`, { method: "DELETE" });
       if (!res.ok) {
