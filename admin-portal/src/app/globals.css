@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --color-primary: #0d63e7;
+  --color-primary-light: #1084ec;
+  --color-accent: #ffba06;
+  --color-dark: #173052;
+  --color-light: #ecf2fb;
+  --color-darker: #00171f;
 }
 
 @theme inline {
@@ -10,6 +16,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-accent: var(--color-accent);
+  --color-dark: var(--color-dark);
+  --color-light: var(--color-light);
+  --color-darker: var(--color-darker);
+
+  --color-primary-50: color-mix(in srgb, var(--color-primary) 10%, white);
+  --color-primary-100: color-mix(in srgb, var(--color-primary) 20%, white);
+  --color-primary-200: color-mix(in srgb, var(--color-primary) 30%, white);
 }
 
 /* Keep the same light background even when the OS prefers dark mode.
@@ -21,4 +38,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.text-primary {
+  color: var(--color-primary);
+}
+.border-primary {
+  border-color: var(--color-primary);
+}
+.gradient-primary {
+  background: linear-gradient(to right, var(--color-primary), var(--color-primary-light));
 }
