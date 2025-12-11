@@ -127,6 +127,8 @@ export class DocumentRetriever {
       all.metadatas ?? []
     );
 
+    console.log(`Items: ${JSON.stringify(items)}`);
+
     const scoredItems = items
       .map((item) => ({
         ...item,

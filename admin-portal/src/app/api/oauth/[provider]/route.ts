@@ -35,9 +35,10 @@ export async function GET(
     const oAuthClient = getOAuthClient(provider);
     oAuthUser = await oAuthClient.fetchUser(code, state, await cookies());
 
-    allowed = !!(await prisma.allowedUser.findUnique({
-      where: { email: oAuthUser.email },
-    }));
+    // allowed = !!(await prisma.allowedUser.findUnique({
+    //   where: { email: oAuthUser.email },
+    // }));
+    
   } catch (error) {
     console.error("OAuth Error:", error);
     return redirectWithError("Failed to connect. Please try again.");
