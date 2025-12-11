@@ -2,7 +2,6 @@ import type { WelcomeScreenProps } from "../types/chat";
 
 export function WelcomeScreen({
   welcomeMessage,
-  privacyPolicyUrl,
   exampleQuestions,
   onQuestionSelect,
 }: WelcomeScreenProps) {
@@ -13,19 +12,6 @@ export function WelcomeScreen({
           {welcomeMessage}
         </h2>
 
-        {privacyPolicyUrl && (
-          <p className="text-sm text-00171f mb-6">
-            We respect your privacy.{" "}
-            <a
-              href={privacyPolicyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-0d63e7 hover:text-1084ec font-medium transition-colors"
-            >
-              Learn more
-            </a>
-          </p>
-        )}
         {exampleQuestions && (
           <div className="space-y-3">
             <p className="text-xs font-medium text-173052 uppercase tracking-wide mb-4">

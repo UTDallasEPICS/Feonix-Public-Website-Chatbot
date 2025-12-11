@@ -53,7 +53,6 @@ export function ChatbotPanel({
           {!hasMessages ? (
             <WelcomeScreen
               welcomeMessage={config.welcomeMessage}
-              privacyPolicyUrl={config.privacyPolicyUrl}
               exampleQuestions={config.exampleQuestions}
               onQuestionSelect={onSend}
             />

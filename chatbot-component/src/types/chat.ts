@@ -70,7 +70,6 @@ export interface ChatMessageProps {
 
 export interface WelcomeScreenProps {
   welcomeMessage?: string;
-  privacyPolicyUrl?: string;
   exampleQuestions?: ExampleQuestion[];
   onQuestionSelect: (question: string) => void;
 }

@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { ChatbotButton } from "./ChatbotButton.tsx";
 import { ChatbotPanel } from "./ChatbotPanel.tsx";
